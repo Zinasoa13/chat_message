@@ -1,0 +1,44 @@
+<div class="chat-area-wrapper">
+  <!-- On passe aussi userPicture au header pour que le header affiche la photo de l'ami -->
+  <app-chat-header
+    [userName]="headerName"
+    [status]="headerStatus"
+    [userPicture]="activeFriend?.picture">
+  </app-chat-header>
+
+  <div class="messages-container custom-scrollbar">
+    <div class="message-bubble" *ngFor="let msg of messages" [class]="msg.type">
+
+      <!-- Photo de l'ami à gauche pour les messages reçus -->
+      <img *ngIf="msg.type === 'received'" [src]="msg.photo" class="w-8 h-8 rounded-full mr-2 mb-1 inline-block object-cover border border-gray-200">
+
+      <div class="bubble-content" *ngIf="msg.text">
+        {{msg.text}}
+      </div>
+
+      <div class="message-meta">
+        <span class="msg-time">{{msg.time}}</span>
+        <svg class="status-icon" *ngIf="msg.type === 'sent'" [class.read]="msg.status === 'read'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+          <polyline points="20 11 11 20 8 17" *ngIf="msg.status === 'read'"></polyline>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Indicateur de saisie -->
+    <div class="message-bubble received" *ngIf="isTyping">
+      <div class="bubble-content" style="padding: 12px 16px;">
+        <span class="typing italic text-xs text-gray-400">En train d'écrire...</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="chat-footer">
+    <div class="input-container">
+      <input type="text" placeholder="Écrire un message..." [(ngModel)]="newMessage" (input)="onType()" (keyup.enter)="sendMessage()">
+      <button class="send-btn" (click)="sendMessage()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+      </button>
+    </div>
+  </footer>
+</div>

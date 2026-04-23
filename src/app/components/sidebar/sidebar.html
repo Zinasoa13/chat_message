@@ -1,0 +1,85 @@
+<div class="sidebar-wrapper">
+  <div class="search-section">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" placeholder="Rechercher un utilisateur..." [(ngModel)]="searchQuery" (input)="onSearchChange()" (blur)="showSearchResults = false" (focus)="searchResults.length > 0 && (showSearchResults = true)">
+      <svg *ngIf="searchQuery" class="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" (mousedown)="clearSearch(); $event.preventDefault()"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </div>
+
+    <!-- Search Results Dropdown -->
+    <div class="search-results" *ngIf="showSearchResults && searchResults.length > 0">
+      <div class="search-result-item" *ngFor="let user of searchResults">
+        <app-avatar [name]="user.name || 'User'" [status]="'offline'" [radius]="12" [size]="36"></app-avatar>
+        <div class="result-info">
+          <span class="result-name">{{user.name}}</span>
+          <span class="result-email">{{user.email}}</span>
+        </div>
+        <button class="add-btn" [class.sent]="isRequestSent(user._id)" (mousedown)="addFriend(user._id); $event.preventDefault()" [disabled]="isRequestSent(user._id)">
+          {{isRequestSent(user._id) ? 'Envoyé' : 'Ajouter'}}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Friends Section -->
+  <ng-container *ngIf="friends$ | async as friendsList">
+    <div class="section-label" *ngIf="friendsList.length > 0">
+      <span class="material-icons-rounded section-icon">people</span>
+      <h3>Amis</h3>
+      <span class="count-badge">{{friendsList.length}}</span>
+    </div>
+
+    <div class="chat-list custom-scrollbar" *ngIf="friendsList.length > 0" style="max-height: 200px; flex: none;">
+      <div class="chat-item friend-item" *ngFor="let friend of friendsList" [class.active]="(friend._id || friend.id) === activeFriendId" (click)="selectFriend(friend)">
+        <app-avatar [name]="friend.name || 'Ami'" [status]="'online'" [radius]="14" [size]="42"></app-avatar>
+        <div class="chat-info">
+          <div class="chat-top">
+            <span class="name">{{friend.name}}</span>
+          </div>
+          <div class="chat-bottom">
+            <span class="snippet">Message privé</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Rooms Section -->
+  <ng-container *ngIf="chats$ | async as chatsList">
+    <div class="section-label">
+      <div class="label-with-count">
+        <span class="material-icons-rounded section-icon">groups</span>
+        <h3>Groupes</h3>
+        <span class="count-badge">{{chatsList.length}}</span>
+      </div>
+      <button class="add-group-btn" (click)="openCreateGroup()" title="Créer un groupe">
+        <span class="material-icons-rounded">add</span>
+      </button>
+    </div>
+
+    <div class="chat-list custom-scrollbar">
+      <div class="chat-item" *ngFor="let chat of chatsList" [class.active]="(chat._id || chat.id) === activeRoomId" (click)="selectRoom(chat)">
+        <app-avatar [name]="chat.name || 'Room'" [status]="'online'" [radius]="16" [size]="48"></app-avatar>
+        <div class="chat-info">
+          <div class="chat-top">
+            <span class="name">{{chat.name || 'Room '+chat._id}}</span>
+            <span class="time">{{chat.updatedAt | date:'shortTime' }}</span>
+          </div>
+          <div class="chat-bottom">
+            <span class="snippet">{{chat.lastMessage || 'No messages yet...'}}</span>
+            <span class="unread-badge" *ngIf="chat.unread > 0">{{chat.unread}}</span>
+            <svg class="check-icon" *ngIf="!chat.unread || chat.unread === 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- Modal de création de groupe -->
+<app-create-group-modal 
+  [isOpen]="createGroupOpen" 
+  (close)="createGroupOpen = false"
+  (created)="onGroupCreated($event)">
+</app-create-group-modal>
+

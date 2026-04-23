@@ -1,0 +1,22 @@
+<div class="calendar-container glass-card">
+  <div class="calendar-header">
+    <div class="month-info">
+      <span class="material-icons-rounded" (click)="prevMonth()">chevron_left</span>
+      <h2>{{monthName}} {{year}}</h2>
+      <span class="material-icons-rounded" (click)="nextMonth()">chevron_right</span>
+    </div>
+    <button class="today-btn" (click)="goToToday()">Aujourd'hui</button>
+  </div>
+
+  <div class="calendar-grid">
+    <div class="day-name" *ngFor="let d of daysOfWeek">{{d}}</div>
+    
+    <div *ngFor="let empty of [].constructor(firstDayOfMonth)" class="day empty"></div>
+    
+    <div *ngFor="let day of daysInMonth" 
+         class="day" 
+         [class.today]="isToday(day)">
+      <span class="day-number">{{day}}</span>
+    </div>
+  </div>
+</div>

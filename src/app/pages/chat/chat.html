@@ -1,0 +1,33 @@
+<div class="app-container">
+  <div class="premium-card main-layout">
+    <app-navbar (onViewChange)="currentView = $event" (onOpenBot)="botOpen = true" (onOpenProfile)="profileOpen = true"></app-navbar>
+
+    <ng-container [ngSwitch]="currentView">
+      <!-- Home View (Default) -->
+      <ng-container *ngSwitchCase="'home'">
+        <app-sidebar></app-sidebar>
+        <app-chat-area></app-chat-area>
+      </ng-container>
+
+      <!-- Notes View -->
+      <ng-container *ngSwitchCase="'notes'">
+        <app-note-list style="flex: 1"></app-note-list>
+      </ng-container>
+
+      <!-- Room View -->
+      <ng-container *ngSwitchCase="'rooms'">
+        <app-room-list style="flex: 1"></app-room-list>
+      </ng-container>
+
+      <!-- Calendar View -->
+      <ng-container *ngSwitchCase="'calendar'">
+        <app-calendar style="flex: 1"></app-calendar>
+      </ng-container>
+
+      <!-- Other Views (Placeholders) -->
+    </ng-container>
+  </div>
+</div>
+
+<app-bot-modal [isOpen]="botOpen" (close)="botOpen = false"></app-bot-modal>
+<app-profile-modal [isOpen]="profileOpen" [user]="user" (close)="profileOpen = false"></app-profile-modal>

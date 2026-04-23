@@ -1,0 +1,51 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="closeModal()">
+  <div class="modal-content glass-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Créer un groupe</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <span class="material-icons-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body custom-scrollbar">
+      <!-- Nom du groupe -->
+      <div class="form-group">
+        <label>Nom du groupe</label>
+        <input type="text" [(ngModel)]="groupName" placeholder="Entrez le nom du groupe..." class="modern-input">
+      </div>
+
+      <!-- Recherche d'amis -->
+      <div class="form-group">
+        <label>Inviter des amis</label>
+        <div class="search-bar">
+          <span class="material-icons-rounded">search</span>
+          <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher un ami...">
+        </div>
+      </div>
+
+      <!-- Liste des amis -->
+      <div class="friends-selection-list" *ngIf="friends$ | async as friendsList">
+        <div class="friend-checkbox-item" *ngFor="let friend of getFilteredFriends(friendsList)" (click)="toggleFriend(friend._id || friend.id)">
+          <div class="friend-info">
+            <app-avatar [name]="friend.name" [size]="36"></app-avatar>
+            <span>{{friend.name}}</span>
+          </div>
+          <div class="checkbox" [class.checked]="selectedFriends.has(friend._id || friend.id)">
+            <span class="material-icons-rounded" *ngIf="selectedFriends.has(friend._id || friend.id)">check</span>
+          </div>
+        </div>
+        
+        <div class="empty-state" *ngIf="friendsList.length === 0">
+          <p>Vous n'avez pas encore d'amis à inviter.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="closeModal()">Annuler</button>
+      <button class="create-btn" [disabled]="!groupName.trim()" (click)="createGroup()">
+        Créer le groupe
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+.calendar-container {
+  padding: 1rem;
+  height: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.month-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.month-info h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  color: var(--chat-primary);
+}
+
+.month-info .material-icons-rounded {
+  cursor: pointer;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.month-info .material-icons-rounded:hover {
+  transform: scale(1.1);
+  color: var(--chat-primary);
+}
+
+.today-btn {
+  background: var(--chat-primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.today-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.day-name {
+  text-align: center;
+  font-weight: 700;
+  color: #94a3b8;
+  padding-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.day {
+  background: white;
+  border-radius: 12px;
+  padding: 0.5rem;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.03);
+  transition: all 0.2s;
+}
+
+.day:hover:not(.empty) {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  border-color: var(--chat-primary);
+}
+
+.day.today {
+  background: var(--chat-primary);
+  color: white;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.day.today .day-number {
+  color: white;
+}
+
+.day-number {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.empty {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}

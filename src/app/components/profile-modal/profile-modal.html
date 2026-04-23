@@ -1,0 +1,44 @@
+<div class="modal-overlay" *ngIf="isOpen">
+  <div class="modal-content glass-card">
+    <div class="modal-header">
+      <h2>Profil Utilisateur</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <span class="material-icons-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="profile-hero">
+      <div class="avatar-container">
+        <img [src]="getPhotoUrl()" [alt]="user?.name" class="main-avatar">
+        <label class="edit-overlay" for="profileUpload">
+          <span class="material-icons-rounded">photo_camera</span>
+        </label>
+        <input type="file" id="profileUpload" hidden (change)="onFileSelected($event)" accept="image/*">
+      </div>
+      <h3>{{user?.name}}</h3>
+      <p class="user-id">@{{user?.email?.split('@')[0]}}</p>
+    </div>
+
+    <div class="modal-tabs">
+      <button [class.active]="activeTab === 'info'" (click)="setTab('info')">Infos</button>
+    </div>
+
+    <div class="modal-body custom-scrollbar">
+      <!-- Info Tab -->
+      <div class="tab-content" *ngIf="activeTab === 'info'">
+        <div class="info-item">
+          <label>Email</label>
+          <p>{{user?.email}}</p>
+        </div>
+        <div class="info-item">
+          <label>Rôle</label>
+          <p>{{user?.role || 'Utilisateur'}}</p>
+        </div>
+        <div class="info-item">
+          <label>Membre depuis</label>
+          <p>{{user?.createdAt | date:'longDate'}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

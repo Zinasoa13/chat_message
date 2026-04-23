@@ -1,0 +1,92 @@
+<div class="navbar-wrapper">
+  <div class="logo-section" (click)="openBot()">
+    <div class="logo-glow"></div>
+    <img src="/logo.png" alt="Soachat Logo" class="brand-logo">
+  </div>
+
+  <div class="nav-links">
+    <div class="nav-item" [class.active]="currentView === 'home'" (click)="setView('home')" title="Home">
+      <span class="material-icons-rounded">home</span>
+    </div>
+    <div class="nav-item" [class.active]="currentView === 'publication'" (click)="setView('publication')" title="Publication">
+      <span class="material-icons-rounded">explore</span>
+    </div>
+    <div class="nav-item" [class.active]="currentView === 'notes'" (click)="setView('notes')" title="Notes">
+      <span class="material-icons-rounded">note_alt</span>
+    </div>
+    <div class="nav-item" [class.active]="currentView === 'rooms'" (click)="setView('rooms')" title="Room">
+      <span class="material-icons-rounded">groups</span>
+    </div>
+    <div class="nav-item" [class.active]="currentView === 'calendar'" (click)="setView('calendar')" title="Calendrier">
+      <span class="material-icons-rounded">calendar_today</span>
+      <div class="today-tag">{{todayDate}}</div>
+    </div>
+    <div class="nav-item notif-item" [class.active]="showNotifDropdown" (click)="toggleNotifDropdown()" title="Notifications">
+      <span class="material-icons-rounded">notifications</span>
+      <div class="notif-badge" *ngIf="unreadNotifs > 0">
+        <span class="notif-count">{{unreadNotifs}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Dropdown -->
+  <div class="notif-dropdown" *ngIf="showNotifDropdown" (click)="$event.stopPropagation()">
+    <div class="notif-dropdown-header">
+      <h4>Notifications</h4>
+    </div>
+    <div class="notif-dropdown-body custom-scrollbar">
+      <!-- Pending Friend Requests -->
+      <div class="notif-section" *ngIf="pendingRequests.length > 0">
+        <span class="notif-section-title">Demandes d'amis</span>
+        <div class="notif-item friend-request" *ngFor="let req of pendingRequests">
+          <span class="material-icons-rounded notif-icon">person_add</span>
+          <div class="notif-text">
+            <span class="notif-name">{{req.from?.name || req.name || 'Utilisateur'}}</span>
+            <span class="notif-desc">souhaite vous ajouter</span>
+          </div>
+          <button class="accept-btn" (click)="acceptFriend(req.from?._id || req._id || req.id)">Accepter</button>
+        </div>
+      </div>
+      <!-- Recent Notifications -->
+      <div class="notif-section" *ngIf="notifications.length > 0">
+        <span class="notif-section-title">Récent</span>
+        <div class="notif-item" *ngFor="let notif of notifications" [class.invitation]="notif.type === 'invitation'" [class.unread]="!notif.isRead">
+          <div class="notif-avatar" *ngIf="notif.sender">
+            <img [src]="notif.sender.picture ? (notif.sender.picture.startsWith('http') ? notif.sender.picture : 'http://localhost:3000' + notif.sender.picture) : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" alt="">
+          </div>
+          <div class="notif-text">
+            <div class="notif-title-row">
+              <span class="notif-name">{{notif.sender?.name || 'Système'}}</span>
+              <span class="notif-time">{{notif.createdAt | date:'shortTime'}}</span>
+            </div>
+            <span class="notif-desc">{{notif.content}}</span>
+          </div>
+          <button class="join-btn" *ngIf="notif.type === 'invitation'" (click)="joinGroup(notif.roomCode)">Rejoindre</button>
+        </div>
+      </div>
+      <!-- Empty State -->
+      <div class="notif-empty" *ngIf="pendingRequests.length === 0 && notifications.length === 0">
+        <span class="material-icons-rounded">notifications_none</span>
+        <span>Aucune notification</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-group">
+    <div class="nav-item logout-btn" (click)="logout()" title="Déconnexion">
+      <span class="material-icons-rounded">logout</span>
+    </div>
+    
+    <div class="user-profile-btn" (click)="openProfile()" [title]="user?.name || 'Profil'">
+      <div class="avatar-wrapper">
+        <img [src]="getPhotoUrl()" [alt]="user?.name" class="user-avatar">
+        <div class="online-indicator"></div>
+      </div>
+      <div class="user-tooltip">
+        <span class="user-name">{{user?.name || 'Chargement...'}}</span>
+        <span class="user-status">En ligne</span>
+      </div>
+    </div>
+  </div>
+</div>
+

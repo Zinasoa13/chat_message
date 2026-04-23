@@ -9,4 +9,7 @@ import { RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly title = signal('z_message');
+  constructor() {
+    console.log("App component initialized");
+  }
 }

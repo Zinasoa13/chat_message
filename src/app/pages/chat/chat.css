@@ -1,0 +1,81 @@
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.main-layout {
+  width: 100%;
+  max-width: 1400px;
+  height: 100%;
+  display: flex;
+  overflow: visible;
+  position: relative;
+}
+
+app-navbar {
+  height: 100%;
+  position: relative;
+  z-index: 1000;
+}
+
+app-sidebar {
+  height: 100%;
+}
+
+app-chat-area {
+  flex: 1;
+  height: 100%;
+}
+
+.placeholder-view {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.coming-soon {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 30px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+  max-width: 400px;
+}
+
+.coming-soon .material-icons-rounded {
+  font-size: 4rem;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+}
+
+.coming-soon h2 {
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.coming-soon p {
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+
+.coming-soon button {
+  background: var(--chat-primary, #000000);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coming-soon button:hover {
+  transform: scale(1.05);
+}

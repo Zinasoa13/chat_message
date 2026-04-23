@@ -1,0 +1,45 @@
+<div class="modal-overlay" *ngIf="isOpen">
+  <div class="modal-content glass-card">
+    <div class="modal-header">
+      <div class="bot-info">
+        <div class="bot-avatar">
+          <img src="/logo.png" alt="Soachan">
+          <div class="status-dot"></div>
+        </div>
+        <div class="text-info">
+          <h2>SOACHAN AI</h2>
+          <span class="status-text">Assistant Intelligent</span>
+        </div>
+      </div>
+      <button class="close-btn" (click)="closeModal()">
+        <span class="material-icons-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="chat-body custom-scrollbar" #scrollContainer>
+      <div class="message" *ngFor="let msg of messages" [class.bot-msg]="msg.sender === 'bot'" [class.user-msg]="msg.sender === 'user'">
+        <div class="msg-bubble">
+          {{msg.content}}
+        </div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="message bot-msg" *ngIf="isBotTyping">
+        <div class="msg-bubble typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="input-wrapper">
+        <input #msgInput type="text" placeholder="Posez une question..." 
+          (input)="onInputChange($event)"
+          (keyup.enter)="sendMessage(msgInput.value); msgInput.value=''">
+        <button class="send-btn" (click)="sendMessage(msgInput.value); msgInput.value=''">
+          <span class="material-icons-rounded">send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

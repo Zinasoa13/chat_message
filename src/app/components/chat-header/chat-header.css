@@ -1,0 +1,30 @@
+.header {
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: white;
+}
+
+.user-block {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.info h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.status {
+  font-size: 0.8rem;
+  color: #10b981;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}

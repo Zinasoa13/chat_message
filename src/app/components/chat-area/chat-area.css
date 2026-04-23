@@ -1,0 +1,245 @@
+.chat-area-wrapper {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+.chat-header {
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-avatar {
+  width: 44px;
+  height: 44px;
+  background: #f1f5f9;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.header-details h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.online-status {
+  font-size: 0.8rem;
+  color: #10b981;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--chat-text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+  color: var(--chat-primary);
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.messages-container {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: #fcfdfe;
+}
+
+.message-bubble {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.bubble-content {
+  padding: 0.8rem 1.2rem;
+  border-radius: 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.sent .bubble-content {
+  background: var(--chat-sent);
+  color: var(--chat-sent-text);
+  border-bottom-right-radius: 4px;
+}
+
+.received .bubble-content {
+  background: var(--chat-received);
+  color: var(--chat-text);
+  border-bottom-left-radius: 4px;
+}
+
+.audio-content {
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 18px;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.play-btn {
+  width: 32px;
+  height: 32px;
+  background: black;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn svg { width: 14px; height: 14px; margin-left: 2px; }
+
+.wave { color: #cbd5e1; letter-spacing: 1px; font-size: 0.8rem; }
+.duration { font-size: 0.75rem; color: var(--chat-text-muted); }
+
+.image-grid {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: black;
+  border-radius: 18px;
+}
+
+.img-placeholder {
+  width: 140px;
+  height: 100px;
+  background: #334155;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.img-placeholder.overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+}
+
+.img-placeholder span {
+  color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+  z-index: 1;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.msg-time {
+  font-size: 0.7rem;
+  color: var(--chat-text-muted);
+}
+
+.status-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--chat-text-muted);
+}
+
+.status-icon.read {
+  color: #10b981;
+}
+
+.chat-footer {
+  padding: 1.5rem 2rem;
+  background: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.input-container {
+  background: #f9fafb;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  gap: 12px;
+}
+
+.input-container input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 10px 0;
+  font-size: 0.95rem;
+}
+
+.attach-btn {
+  color: var(--chat-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.send-btn {
+  background: black;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.send-btn:hover {
+  transform: scale(1.05);
+}
+
+.send-btn svg { width: 18px; height: 18px; transform: rotate(45deg); margin-left: -2px; margin-top: -2px; }

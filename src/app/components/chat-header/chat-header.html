@@ -1,0 +1,31 @@
+<!-- chat-header.html -->
+<header class="header flex items-center justify-between p-4 bg-white border-b border-gray-100">
+  <div class="flex items-center gap-3">
+    <!-- On affiche l'avatar seulement si on a un nom -->
+    <app-avatar
+      *ngIf="userName"
+      [src]="userPicture"
+      [name]="userName"
+      [status]="'online'"
+      [size]="40"
+      [radius]="12">
+    </app-avatar>
+
+    <div class="info">
+      <h3 class="text-sm font-bold text-gray-900 leading-tight">{{userName || 'Sélectionnez un chat'}}</h3>
+      <span class="text-[11px] font-medium text-green-500 flex items-center gap-1">
+        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+        {{status}}
+      </span>
+    </div>
+  </div>
+
+  <div class="actions flex gap-2">
+    <app-icon-btn class="text-gray-400 hover:text-blue-500 transition-colors">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+    </app-icon-btn>
+    <app-icon-btn class="text-gray-400 hover:text-blue-500 transition-colors">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+    </app-icon-btn>
+  </div>
+</header>
