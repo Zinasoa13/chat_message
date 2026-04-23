@@ -31,13 +31,16 @@
 
     <div class="chat-list custom-scrollbar" *ngIf="friendsList.length > 0" style="max-height: 200px; flex: none;">
       <div class="chat-item friend-item" *ngFor="let friend of friendsList" [class.active]="(friend._id || friend.id) === activeFriendId" (click)="selectFriend(friend)">
-        <app-avatar [name]="friend.name || 'Ami'" [status]="'online'" [radius]="14" [size]="42"></app-avatar>
+        <app-avatar [name]="friend.name || 'Ami'" [src]="friend.picture" [status]="friend.status" [radius]="14" [size]="42"></app-avatar>
         <div class="chat-info">
           <div class="chat-top">
             <span class="name">{{friend.name}}</span>
+            <span class="time" *ngIf="friend.status === 'offline' && friend.lastSeen">
+              {{ friend.lastSeen | date:'shortTime' }}
+            </span>
           </div>
           <div class="chat-bottom">
-            <span class="snippet">Message privé</span>
+            <span class="snippet">{{ friend.status === 'offline' ? 'Vu à ' + (friend.lastSeen | date:'shortTime') : 'Message privé' }}</span>
           </div>
         </div>
       </div>
@@ -59,7 +62,7 @@
 
     <div class="chat-list custom-scrollbar">
       <div class="chat-item" *ngFor="let chat of chatsList" [class.active]="(chat._id || chat.id) === activeRoomId" (click)="selectRoom(chat)">
-        <app-avatar [name]="chat.name || 'Room'" [status]="'online'" [radius]="16" [size]="48"></app-avatar>
+        <app-avatar [name]="chat.name || 'Room'" [status]="chat.status || 'offline'" [radius]="16" [size]="48"></app-avatar>
         <div class="chat-info">
           <div class="chat-top">
             <span class="name">{{chat.name || 'Room '+chat._id}}</span>

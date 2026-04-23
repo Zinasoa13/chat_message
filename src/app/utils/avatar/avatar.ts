@@ -40,6 +40,7 @@ import { CommonModule } from '@angular/common';
       z-index: 10;
     }
     .online { background: #10b981; }
+    .idle { background: #f59e0b; }
     .offline { background: #94a3b8; }
   `]
 })

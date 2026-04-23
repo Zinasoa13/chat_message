@@ -1,0 +1,29 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Membres de {{room?.name || 'la discussion'}}</h3>
+      <button class="close-btn" (click)="onClose()">
+        <span class="material-icons-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="members-list custom-scrollbar">
+      <div class="member-item" *ngFor="let member of room?.members">
+        <app-avatar 
+          [name]="member.name || 'Membre'" 
+          [src]="member.picture" 
+          [status]="getMemberStatus(member)?.status || 'offline'" 
+          [radius]="14" 
+          [size]="42">
+        </app-avatar>
+        
+        <div class="member-info">
+          <span class="member-name">{{member.name || 'Chargement...'}}</span>
+          <span class="member-status-text" [ngClass]="getStatusClass(member)">
+            {{ getStatusLabel(member) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

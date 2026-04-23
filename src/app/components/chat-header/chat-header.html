@@ -6,21 +6,34 @@
       *ngIf="userName"
       [src]="userPicture"
       [name]="userName"
-      [status]="'online'"
+      [status]="status"
       [size]="40"
       [radius]="12">
     </app-avatar>
 
     <div class="info">
       <h3 class="text-sm font-bold text-gray-900 leading-tight">{{userName || 'Sélectionnez un chat'}}</h3>
-      <span class="text-[11px] font-medium text-green-500 flex items-center gap-1">
-        <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-        {{status}}
+      <span class="text-[11px] font-medium flex items-center gap-1" [ngClass]="{
+        'text-green-500': status === 'online',
+        'text-orange-500': status === 'idle',
+        'text-gray-400': status === 'offline'
+      }">
+        <span class="w-1.5 h-1.5 rounded-full" [ngClass]="{
+          'bg-green-500': status === 'online',
+          'bg-orange-500': status === 'idle',
+          'bg-gray-400': status === 'offline'
+        }"></span>
+        {{ getStatusText() }}
       </span>
     </div>
   </div>
 
   <div class="actions flex gap-2">
+    <!-- Bouton membres pour les groupes -->
+    <app-icon-btn class="text-gray-400 hover:text-blue-500 transition-colors" *ngIf="isGroup" (click)="toggleMembersModal()" title="Membres du groupe">
+      <span class="material-icons-rounded text-xl">groups</span>
+    </app-icon-btn>
+
     <app-icon-btn class="text-gray-400 hover:text-blue-500 transition-colors">
        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
     </app-icon-btn>
@@ -29,3 +42,9 @@
     </app-icon-btn>
   </div>
 </header>
+
+<app-room-members-modal 
+  [isOpen]="showMembersModal" 
+  [room]="activeRoom" 
+  (close)="showMembersModal = false">
+</app-room-members-modal>

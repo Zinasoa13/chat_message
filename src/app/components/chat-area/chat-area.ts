@@ -20,9 +20,13 @@ export class ChatArea implements OnInit, OnDestroy {
   newMessage = '';
   activeRoomId: string | null = null;
   activeFriend: any = null;
+  activeRoom: any = null;
   headerName = 'Sélectionnez une conversation';
   headerStatus = 'Hors ligne';
+  headerLastSeen: any = null;
   isTyping = false;
+  selectedFile: File | null = null;
+  showEmojiPicker = false;
   private subs = new Subscription();
 
   constructor(
@@ -32,19 +36,51 @@ export class ChatArea implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {}
 
+  isLoadingMore = false;
+  rawMessages: any[] = []; // Garder une trace des objets messages originaux pour les dates
+
   ngOnInit() {
     this.subs.add(this.socketHelper.messages$.subscribe(msgs => {
-      this.messages = this.mapMessages(msgs);
-      this.cdr.detectChanges(); // Force l'affichage immédiat
+      const currentRoomId = this.activeRoomId || this.activeFriend?._id;
+      if (!currentRoomId) {
+        this.messages = [];
+        return;
+      }
+      // Filtrer les messages pour ne garder que ceux de la room active
+      const filtered = msgs.filter(m => {
+          const mRoom = m.room?.toString();
+          return mRoom === currentRoomId || m.sender?._id === currentRoomId || m.sender === currentRoomId;
+      });
+      this.rawMessages = filtered;
+      this.messages = this.mapMessages(filtered);
+      this.cdr.detectChanges();
+      if (!this.isLoadingMore) {
+        setTimeout(() => this.scrollToBottom(), 100);
+      } else {
+        this.isLoadingMore = false;
+        // Restaurer la position du scroll ? Ce sera fait dans onScroll via handleMoreMessages
+      }
     }));
 
     this.subs.add(this.dataService.activeRoom$.subscribe(room => {
       if (room) {
         this.activeFriend = null;
         this.activeRoomId = room._id;
+        this.activeRoom = room;
         this.headerName = room.name;
-        this.headerStatus = (room.members?.length || 0) + ' membres';
+        this.headerStatus = room.status || 'offline';
         this.socketHelper.joinRoom(room._id);
+      }
+    }));
+
+    // Épouser les changements en direct pour les rooms
+    this.subs.add(this.dataService.userRooms$.subscribe(rooms => {
+      if (this.activeRoomId) {
+        const updated = rooms.find(r => r._id === this.activeRoomId);
+        if (updated) {
+          this.headerStatus = updated.status;
+          this.cdr.markForCheck();
+        }
       }
     }));
 
@@ -53,15 +89,35 @@ export class ChatArea implements OnInit, OnDestroy {
         this.activeFriend = friend;
         this.activeRoomId = null;
         this.headerName = friend.name;
-        this.headerStatus = 'En ligne';
+        this.headerStatus = friend.status || 'offline';
+        this.headerLastSeen = friend.lastSeen;
         this.socketHelper.getPrivateHistory(friend._id);
+      }
+    }));
+
+    // Épouser les changements en direct si on regarde un ami
+    this.subs.add(this.dataService.userFriends$.subscribe(friends => {
+      if (this.activeFriend) {
+        const updated = friends.find(f => f._id === this.activeFriend._id);
+        if (updated) {
+          this.headerStatus = updated.status;
+          this.headerLastSeen = updated.lastSeen;
+          this.cdr.markForCheck();
+        }
       }
     }));
 
     this.subs.add(this.socketHelper.typing$.subscribe(data => {
       const myId = this.auth.getUser()?._id;
-      this.isTyping = (data && data.isTyping && data.sender !== myId);
-      this.cdr.detectChanges();
+      const currentRoomId = this.activeRoomId || this.activeFriend?._id;
+      
+      this.isTyping = (
+          data && 
+          data.isTyping && 
+          data.sender !== myId && 
+          (data.room === currentRoomId || data.sender === currentRoomId)
+      );
+      this.cdr.markForCheck();
     }));
   }
 
@@ -91,21 +147,61 @@ export class ChatArea implements OnInit, OnDestroy {
   }
 
   sendMessage() {
-    if (!this.newMessage.trim()) return;
+    if (!this.newMessage.trim() && !this.selectedFile) return;
 
     if (this.activeFriend) {
-      this.socketHelper.sendMessage(this.newMessage, undefined, this.activeFriend._id);
+      this.socketHelper.sendPrivateMessage(this.newMessage, this.activeFriend._id, this.activeRoomId || this.activeFriend._id);
     } else if (this.activeRoomId) {
       this.socketHelper.sendMessage(this.newMessage, this.activeRoomId);
-      this.socketHelper.sendTyping(this.activeRoomId, false);
     }
+
+    const targetId = this.activeRoomId || this.activeFriend?._id;
+    if (targetId) this.socketHelper.sendTyping(targetId, false);
+
     this.newMessage = '';
+    this.selectedFile = null;
+    this.showEmojiPicker = false;
+  }
+
+  onTyping(event: any) {
+    const targetId = this.activeRoomId || this.activeFriend?._id;
+    if (targetId) {
+      this.socketHelper.sendTyping(targetId, this.newMessage.length > 0);
+    }
+  }
+
+  onScroll(event: any) {
+    const element = event.target;
+    if (element.scrollTop === 0 && this.messages.length >= 10 && !this.isLoadingMore) {
+      const oldestMsg = this.rawMessages[0];
+      if (oldestMsg && oldestMsg.createdAt) {
+        this.isLoadingMore = true;
+        const prevHeight = element.scrollHeight;
+        
+        this.socketHelper.loadMoreMessages(this.activeRoomId || this.activeFriend?._id, oldestMsg.createdAt);
+        
+        // On attend que les messages arrivent pour ajuster le scroll
+        const sub = this.socketHelper.messages$.subscribe(() => {
+          setTimeout(() => {
+            element.scrollTop = element.scrollHeight - prevHeight;
+            sub.unsubscribe();
+          }, 100);
+        });
+      }
+    }
   }
 
   onType() {
     const id = this.activeRoomId || this.activeFriend?._id;
     if (id) {
       this.socketHelper.sendTyping(id, this.newMessage.length > 0);
+    }
+  }
+
+  scrollToBottom() {
+    const chatContainer = document.querySelector('.messages-container');
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
     }
   }
 

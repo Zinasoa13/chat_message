@@ -5,8 +5,8 @@
     <ng-container [ngSwitch]="currentView">
       <!-- Home View (Default) -->
       <ng-container *ngSwitchCase="'home'">
-        <app-sidebar></app-sidebar>
-        <app-chat-area></app-chat-area>
+        <app-sidebar [class.full-width]="!hasActiveChat"></app-sidebar>
+        <app-chat-area *ngIf="hasActiveChat"></app-chat-area>
       </ng-container>
 
       <!-- Notes View -->

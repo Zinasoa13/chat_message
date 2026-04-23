@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { SocketHelper } from './socket-helper';
+import { Auth } from './auth';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -10,10 +11,10 @@ export class DataService {
   private viewSubject = new BehaviorSubject<string>('home');
   public view$ = this.viewSubject.asObservable();
 
-  private activeRoomSubject = new BehaviorSubject<any>(null);
+  public activeRoomSubject = new BehaviorSubject<any>(null);
   public activeRoom$ = this.activeRoomSubject.asObservable();
 
-  private activeFriendSubject = new BehaviorSubject<any>(null);
+  public activeFriendSubject = new BehaviorSubject<any>(null);
   public activeFriend$ = this.activeFriendSubject.asObservable();
 
   private userRoomsSubject = new BehaviorSubject<any[]>([]);
@@ -25,18 +26,75 @@ export class DataService {
   private userNotificationsSubject = new BehaviorSubject<any[]>([]);
   public userNotifications$ = this.userNotificationsSubject.asObservable();
 
-  constructor(private http: HttpClient, private socketHelper: SocketHelper) {
+  // Cache global pour les statuts de tous les utilisateurs connus
+  private userStatusesMap = new Map<string, any>();
+
+  constructor(private http: HttpClient, private socketHelper: SocketHelper, private auth: Auth) {
+    // Écouter les changements de statut et mettre à jour le cache et les listes
+    this.socketHelper.userStatuses$.subscribe((statuses: any[]) => {
+      statuses.forEach(s => this.userStatusesMap.set(s.userId, s));
+      this.refreshPresenceInLists();
+    });
+
     // Écouter les nouvelles notifications du socket et les ajouter au flux
     this.socketHelper.notifications$.subscribe((newNotifs: any[]) => {
       if (newNotifs.length > 0) {
         const currentNotifs = this.userNotificationsSubject.value;
-        // On évite les doublons en vérifiant l'ID
         const filteredNew = newNotifs.filter(nn => !currentNotifs.some(cn => (cn._id || cn.id) === (nn._id || nn.id)));
         if (filteredNew.length > 0) {
           this.userNotificationsSubject.next([...filteredNew, ...currentNotifs]);
         }
       }
     });
+  }
+
+  private refreshPresenceInLists() {
+    const myId = this.auth.getUser()?._id;
+    if (!myId) return;
+
+    // 1. Mettre à jour les amis
+    const currentFriends = this.userFriendsSubject.value;
+    if (currentFriends.length > 0) {
+      const updatedFriends = currentFriends.map(f => {
+        const friend = f.requester?._id === myId ? f.recipient : f.requester;
+        const status = this.userStatusesMap.get(friend?._id);
+        return status ? { ...f, status: status.status, lastSeen: status.lastSeen } : f;
+      });
+      this.userFriendsSubject.next(updatedFriends);
+    }
+
+    // 2. Mettre à jour les rooms (calcul du statut agrégé pour les groupes)
+    const currentRooms = this.userRoomsSubject.value;
+    if (currentRooms.length > 0) {
+      const updatedRooms = currentRooms.map(room => {
+        if (!room.isPrivate) {
+          // Pour un groupe, on calcule le statut agrégé (incluant soi-même)
+          const members = room.members || [];
+          
+          let roomStatus = 'offline';
+          const memberStatuses = members.map((m: any) => {
+            const mId = m._id || m;
+            // Si c'est moi, je suis forcément online (ou idle, mais on simplifie ici à online pour l'instant comme demandé)
+            if (mId === myId) return 'online'; 
+            return this.userStatusesMap.get(mId)?.status || 'offline';
+          });
+
+          if (memberStatuses.includes('online')) {
+            roomStatus = 'online';
+          } else if (memberStatuses.includes('idle')) {
+            roomStatus = 'idle';
+          }
+
+          return { ...room, status: roomStatus };
+        }
+        return room;
+      });
+      this.userRoomsSubject.next(updatedRooms);
+    }
+  }
+
+  public getStatus(userId: string) {
+    return this.userStatusesMap.get(userId);
   }
 
   // --- NAVIGATION ---
@@ -67,7 +125,15 @@ export class DataService {
   public getFriends(): Observable<any[]> { return this.http.get<any[]>(`${this.baseUrl}/friends`); }
   public fetchFriends() {
     this.getFriends().subscribe({
-      next: friends => this.userFriendsSubject.next(friends),
+      next: friends => {
+        const myId = this.auth.getUser()?._id;
+        const merged = friends.map(f => {
+          const friend = f.requester?._id === myId ? f.recipient : f.requester;
+          const status = this.userStatusesMap.get(friend?._id);
+          return status ? { ...f, status: status.status, lastSeen: status.lastSeen } : f;
+        });
+        this.userFriendsSubject.next(merged);
+      },
       error: () => this.userFriendsSubject.next([])
     });
   }

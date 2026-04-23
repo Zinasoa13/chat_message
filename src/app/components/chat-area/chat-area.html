@@ -3,10 +3,13 @@
   <app-chat-header
     [userName]="headerName"
     [status]="headerStatus"
-    [userPicture]="activeFriend?.picture">
+    [lastSeen]="headerLastSeen"
+    [userPicture]="activeFriend?.picture"
+    [isGroup]="activeRoom && !activeRoom.isPrivate"
+    [activeRoom]="activeRoom">
   </app-chat-header>
 
-  <div class="messages-container custom-scrollbar">
+  <div class="messages-container custom-scrollbar" (scroll)="onScroll($event)" #scrollContainer>
     <div class="message-bubble" *ngFor="let msg of messages" [class]="msg.type">
 
       <!-- Photo de l'ami à gauche pour les messages reçus -->

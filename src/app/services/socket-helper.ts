@@ -11,6 +11,10 @@ export class SocketHelper {
   private typingSubject = new BehaviorSubject<any>(null);
   public typing$ = this.typingSubject.asObservable();
 
+  private userStatusesSubject = new BehaviorSubject<any[]>([]);
+  public userStatuses$ = this.userStatusesSubject.asObservable();
+  public get userStatuses() { return this.userStatusesSubject.value; }
+
   private notificationsSubject = new BehaviorSubject<any[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
 
@@ -23,7 +27,25 @@ export class SocketHelper {
       this.zone.run(() => this.messagesSubject.next(history || []));
     });
 
+    this.socket.on('privateHistory', (history: any[]) => {
+      this.zone.run(() => this.messagesSubject.next(history || []));
+    });
+
+    this.socket.on('moreMessageHistory', (moreHistory: any[]) => {
+      this.zone.run(() => {
+        const current = this.messagesSubject.value;
+        this.messagesSubject.next([...moreHistory, ...current]);
+      });
+    });
+
     this.socket.on('newMessage', (msg: any) => {
+      this.zone.run(() => {
+        const current = this.messagesSubject.value;
+        this.messagesSubject.next([...current, msg]);
+      });
+    });
+
+    this.socket.on('newPrivateMessage', (msg: any) => {
       this.zone.run(() => {
         const current = this.messagesSubject.value;
         this.messagesSubject.next([...current, msg]);
@@ -39,6 +61,23 @@ export class SocketHelper {
         this.notificationsSubject.next([notif, ...this.notificationsSubject.value]);
       });
     });
+
+    this.socket.on('statusChanged', (data: any) => {
+      this.zone.run(() => {
+        const current = this.userStatusesSubject.value;
+        const index = current.findIndex(s => s.userId === data.userId);
+        if (index > -1) {
+          current[index] = data;
+          this.userStatusesSubject.next([...current]);
+        } else {
+          this.userStatusesSubject.next([...current, data]);
+        }
+      });
+    });
+
+    this.socket.on('initialStatuses', (statuses: any[]) => {
+      this.zone.run(() => this.userStatusesSubject.next(statuses || []));
+    });
   }
 
   connect() {
@@ -49,13 +88,32 @@ export class SocketHelper {
     }
   }
 
+  public updateUserActivity() {
+    this.socket.emit('updateUserActivity');
+  }
+
   joinRoom(roomId: string) {
     this.messagesSubject.next([]);
     this.socket.emit('joinRoom', roomId);
   }
 
-  sendMessage(content: string, roomId?: string, recipientId?: string) {
-    this.socket.emit('sendMessage', { room: roomId, content, recipientId });
+  public loadMoreMessages(room: string, before: Date) {
+    this.socket.emit('loadMoreMessages', { room, before });
+  }
+
+  public sendMessage(content: string, roomId?: string, recipientId?: string) {
+    if (this.socket.connected) {
+      this.socket.emit('sendMessage', { content, room: roomId, recipientId });
+      if (roomId) this.sendTyping(roomId, false);
+    }
+  }
+
+  public sendPrivateMessage(content: string, recipientId: string, roomId?: string) {
+    if (this.socket.connected) {
+      this.socket.emit('sendPrivateMessage', { content, recipientId });
+      if (roomId) this.sendTyping(roomId, false);
+      else if (recipientId) this.sendTyping(recipientId, false); // On utilise recipientId si pas de roomId (le back résout)
+    }
   }
 
   getPrivateHistory(recipientId: string) {

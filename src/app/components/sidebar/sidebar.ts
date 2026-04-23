@@ -43,7 +43,10 @@ export class Sidebar implements OnInit, OnDestroy {
     this.friends$ = this.dataService.userFriends$.pipe(
       map(data => {
         const myId = this.auth.getUser()?._id;
-        return data.map((f: any) => f.requester?._id === myId ? f.recipient : f.requester);
+        return data.map((f: any) => {
+          const friend = f.requester?._id === myId ? f.recipient : f.requester;
+          return { ...friend, status: f.status, lastSeen: f.lastSeen };
+        });
       })
     );
   }
