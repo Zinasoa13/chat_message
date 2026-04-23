@@ -89,6 +89,10 @@ export class UsersService {
 	return await this.userModel.findById(id).exec();
 	}
 
+	async updatePresence(userId: string, status: string, lastSeen: Date): Promise<User | null> {
+		return await this.userModel.findByIdAndUpdate(userId, { status, lastSeen }, { returnDocument: 'after' }).exec();
+	}
+
 	async findByEmail(email: string): Promise<User | null> {
 	return await this.userModel.findOne({ email }).exec();
 	}

@@ -38,11 +38,13 @@ export class ChatService {
 			query.createdAt = { $lt: before };
 		}
 
-		return await this.messageModel
+		const messages = await this.messageModel
 		.find(query)
 		.populate('sender', 'name picture')
-		.sort({ createdAt: -1 }) // On trie du plus récent au plus vieux
-		.limit(limit) // On ne prend que 20 messages
+		.sort({ createdAt: -1 }) // On prend les plus récents en premier pour le limit
+		.limit(limit)
 		.exec();
+
+		return messages.reverse(); // On inverse pour avoir l'ordre chronologique (du plus vieux au plus récent)
 	}
 }

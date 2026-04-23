@@ -38,7 +38,7 @@ export class RoomsService {
 	}
 
 	async update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room | null> {
-	return await this.roomModel.findByIdAndUpdate(id, updateRoomDto, { new: true }).exec();
+	return await this.roomModel.findByIdAndUpdate(id, updateRoomDto, { returnDocument: 'after' }).exec();
 	}
 
 	async remove(id: string): Promise<Room | null> {
@@ -57,7 +57,7 @@ export class RoomsService {
 		const updatedRoom = await this.roomModel.findByIdAndUpdate(
 			room._id,
 			{ $addToSet: {members : userId}},
-			{ new: true }
+			{ returnDocument: 'after' }
 		).exec()
 
 		if (!updatedRoom) {

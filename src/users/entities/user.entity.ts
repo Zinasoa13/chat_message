@@ -18,6 +18,12 @@ export class User extends Document {
 	@Prop({ default: 'light' })
 	theme: string;
 
+	@Prop({ default: 'offline' })
+	status: string;
+
+	@Prop({ default: Date.now })
+	lastSeen: Date;
+
 	@Prop({ default: Date.now })
 	createdAt: Date;
 }

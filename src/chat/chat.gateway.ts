@@ -1,4 +1,4 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WebSocketServer, OnGatewayDisconnect, OnGatewayConnection } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WebSocketServer, OnGatewayDisconnect, OnGatewayConnection, OnGatewayInit } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { UsersService } from 'src/users/users.service';
@@ -8,11 +8,13 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { AiService } from 'src/ai/ai.service';
 
 @WebSocketGateway({ cors: true })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
 	@WebSocketServer()
 	server: Server;
 
-	private connectedUsers = new Map<string, string>();
+	// Memory for presence
+	private connectedUsers = new Map<string, Set<string>>(); // userId -> Set<socketId>
+	private userActivity = new Map<string, number>();      // userId -> timestamp
 
 	constructor(
 	private readonly chatService: ChatService,
@@ -21,29 +23,58 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	private readonly notificationService: NotificationsService,
 	private readonly roomsService: RoomsService,
 	private readonly aiService: AiService
-	) {}
+	) {
+	}
+
+	afterInit(server: Server) {
+		// Intervalle de vérification des idle (inactifs depuis 5 min)
+		setInterval(() => this.checkIdleUsers(), 30000);
+	}
 
 	private getUserId(client: Socket): string {
 	const rawUserId = client.handshake.query.userId;
 	return Array.isArray(rawUserId) ? rawUserId[0] : (rawUserId || '');
 	}
 
-	handleConnection(client: Socket) {
+	async handleConnection(client: Socket) {
 	const userId = this.getUserId(client);
 	if (userId) {
-		this.connectedUsers.set(userId, client.id);
-		client.join(userId); // Chaque utilisateur rejoint sa propre room (ID)
-		console.log(`Utilisateur connecté: ${userId} sur le socket ${client.id}`);
+		// Gérer les sockets multiples pour un même utilisateur
+		if (!this.connectedUsers.has(userId)) {
+			this.connectedUsers.set(userId, new Set());
+		}
+		this.connectedUsers.get(userId)!.add(client.id);
+		
+		this.userActivity.set(userId, Date.now());
+		console.log(`Presence: ${userId} est maintenant Online.`);
+		
+		client.join(userId);
+
+		// Notifier les amis et envoyer le snapshot initial
+		await this.usersService.updatePresence(userId, 'online', new Date());
+		this.emitStatusToContacts(userId, 'online');
+		this.sendInitialStatuses(client);
+
 		this.server.emit('userOnline', userId);
 	}
 	}
 
-	handleDisconnect(client: Socket) {
+	async handleDisconnect(client: Socket) {
 	const userId = this.getUserId(client);
 	if (userId) {
-		this.connectedUsers.delete(userId);
-		console.log(`Client ${client.id} (user: ${userId}) déconnecté.`);
-		this.server.emit('userOffline', userId);
+		const sockets = this.connectedUsers.get(userId);
+		if (sockets) {
+			sockets.delete(client.id);
+			if (sockets.size === 0) {
+				this.connectedUsers.delete(userId);
+				this.userActivity.delete(userId);
+				const lastSeen = new Date();
+				await this.usersService.updatePresence(userId, 'offline', lastSeen);
+				console.log(`Presence: ${userId} est maintenant Offline.`);
+				this.emitStatusToContacts(userId, 'offline', lastSeen);
+				this.server.emit('userOffline', userId);
+			}
+		}
 	}
 	}
 
@@ -53,7 +84,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	const userId = this.getUserId(client);
 
 	if (userId) {
-		this.connectedUsers.set(userId, client.id);
+		if (!this.connectedUsers.has(userId)) {
+			this.connectedUsers.set(userId, new Set());
+		}
+		this.connectedUsers.get(userId)!.add(client.id);
 	}
 
 	try {
@@ -80,7 +114,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		console.log(`Utilisateurs dans la room ${cleanRoomId}:`, usersInRoom);
 		this.server.to(cleanRoomId).emit('usersInRoom', usersInRoom);
 
-		const messages = await this.chatService.getMessagesByRoom(cleanRoomId);
+		const messages = await this.chatService.getMessagesByRoom(cleanRoomId, 15);
 		client.emit('messageHistory', messages);
 	} catch (error) {
 		console.error(`Erreur lors du joinRoom : ${error.message}`);
@@ -181,7 +215,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		}
 	}
 
-	this.server.to(payload.room).emit('newMessage', populatedMessage);
+	const target = this.server.to(payload.room);
+	if (payload.recipientId) target.to(payload.recipientId);
+	target.emit('newMessage', populatedMessage);
 	} catch (error) {
 		console.error(`Erreur lors de l'envoi du message : ${error.message}`);
 		client.emit('error', { message: 'Impossible d\'envoyer le message.' });
@@ -193,11 +229,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	@MessageBody() payload: { room: string, before: Date },
 	@ConnectedSocket() client: Socket
 	) {
-	// On charge 20 messages de plus avant la date donnée
-	const messages = await this.chatService.getMessagesByRoom(payload.room, 20, payload.before);
+		const userId = this.getUserId(client);
+		let targetRoomId = payload.room;
 
-	// On envoie ces messages à l'utilisateur qui a scrollé
-	client.emit('messageHistory', messages);
+		// On vérifie si 'room' est un ID de Room ou un ID de User (pour les chats privés)
+		try {
+			await this.roomsService.findOne(targetRoomId);
+		} catch (e) {
+			// Si on ne trouve pas la room, on tente de trouver la room privée avec ce "room" (qui est donc un recipientId)
+			const privateRoom = await this.roomsService.findOrCreatePrivateRoom(userId, targetRoomId);
+			targetRoomId = privateRoom._id.toString();
+		}
+
+		// On charge 10 messages de plus avant la date donnée
+		const messages = await this.chatService.getMessagesByRoom(targetRoomId, 10, payload.before);
+
+		// On envoie ces messages via un événement spécifique pour la pagination
+		client.emit('moreMessageHistory', messages);
 	}
 
 	@SubscribeMessage('sendPrivateMessage')
@@ -212,17 +260,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	if (!payload.recipientId) throw new Error('Destinataire manquant');
 
 	try {
-		// 1. Trouver ou créer la room privée
 		const room = await this.roomsService.findOrCreatePrivateRoom(userId, payload.recipientId);
 		const roomId = room._id.toString();
-
-		// S'assurer que le client a rejoint la room du socket pour cette conversation
 		client.join(roomId);
 
-		// 2. Sauvegarde du message associé à la room
 		const savedMessage = await this.chatService.saveMessage({
 			sender: userId,
-			room: roomId, // On utilise roomId au lieu de recipient
+			room: roomId,
 			content: payload.content,
 			type: payload.type || 'text',
 			fileUrl: payload.fileUrl,
@@ -232,20 +276,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 		const populatedMessage = await savedMessage.populate('sender', 'name picture');
 
-		// 3. Diffuser à la room (les deux participants)
-		this.server.to(roomId).emit('newPrivateMessage', populatedMessage);
-		
-		// Note: On émet aussi 'newMessage' pour la compatibilité avec certains composants front
-		this.server.to(roomId).emit('newMessage', populatedMessage);
+		// Diffuser à la room ET au destinataire directement (au cas où il n'a pas rejoint la room)
+		this.server.to(roomId).to(payload.recipientId).emit('newMessage', populatedMessage);
 
-		// 4. Notification
 		await this.notificationService.create(
 			payload.recipientId,
 			'private_message',
 			`Nouveau message privé de ${populatedMessage.sender['name'] || 'quelqu\'un'}`,
 			userId
 		);
-
 	} catch (error) {
 		console.error(`Erreur lors de l'envoi du message privé : ${error.message}`);
 		client.emit('error', { message: 'Impossible d\'envoyer le message privé.' });
@@ -261,14 +300,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	if (!userId) throw new Error('Utilisateur non identifié');
 
 	try {
-		// Résoudre la room privée d'abord
 		const room = await this.roomsService.findOrCreatePrivateRoom(userId, payload.recipientId);
+		const roomId = room._id.toString();
+		client.join(roomId); // IMPORTANT: Rejoindre la room pour recevoir les futurs messages
 		
-		// Récupérer les messages par roomId
-		const messages = await this.chatService.getMessagesByRoom(room._id.toString());
+		const messages = await this.chatService.getMessagesByRoom(roomId, 15);
 		client.emit('privateHistory', messages);
 	} catch (error) {
-		console.error(`Erreur lors de la récupération de l'historique privé : ${error.message}`);
+		console.error(`Erreur récup historique privé : ${error.message}`);
 		client.emit('error', { message: 'Impossible de récupérer l\'historique.' });
 	}
 	}
@@ -278,51 +317,98 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	@MessageBody() data: any,
 	@ConnectedSocket() client: Socket
 	) {
-	// 1. Parsing robuste : traite les cas où Hoppscotch envoie du JSON en string
 		const payload = (typeof data === 'string') ? JSON.parse(data) : data;
-
-		// LOG CRUCIAL pour voir ce qu'on reçoit vraiment
-		console.log('DONNÉES REÇUES DANS CONFIRM_SEND:', payload);
-
 		const userId = this.getUserId(client);
-
-		// 2. Sécurité sur le roomId
-		// Vérifie si le champ s'appelle 'roomId' ou 'room'
 		const roomId = payload.roomId || payload.room;
 
 		if (!roomId || !payload.content) {
-		console.error('Erreur : roomId ou content manquant dans le payload', payload);
-		client.emit('error', { message: 'Données manquantes pour envoyer le rapport' });
-		return;
+			client.emit('error', { message: 'Données manquantes' });
+			return;
 		}
 
-		// 3. Sauvegarde
 		const savedMessage = await this.chatService.saveMessage({
-		sender: userId,
-		room: roomId,
-		content: payload.content,
-		type: 'text'
-	});
+			sender: userId,
+			room: roomId,
+			content: payload.content,
+			type: 'text'
+		});
 
-	// 4. Populate
-	const populatedMessage = await savedMessage.populate('sender', 'name picture');
+		const populatedMessage = await savedMessage.populate('sender', 'name picture');
+		this.server.to(roomId).emit('newMessage', populatedMessage);
+	}
 
-	// 5. Diffusion
-	this.server.to(roomId).emit('newMessage', populatedMessage);
+	@SubscribeMessage('updateUserActivity')
+	async handleUpdateUserActivity(@ConnectedSocket() client: Socket) {
+		const userId = this.getUserId(client);
+		if (!userId) return;
 
-	console.log(`Rapport envoyé automatiquement par ${userId} dans la room ${roomId}`);
+		this.userActivity.set(userId, Date.now());
+
+		const user = await this.usersService.findOne(userId);
+		if (user && user.status !== 'online') {
+			await this.usersService.updatePresence(userId, 'online', new Date());
+			this.emitStatusToContacts(userId, 'online');
+		}
+	}
+
+	private async checkIdleUsers() {
+		const now = Date.now();
+		const IDLE_THRESHOLD = 5 * 60 * 1000; // 5 min
+
+		for (const [userId, lastActivity] of this.userActivity.entries()) {
+			if (now - lastActivity > IDLE_THRESHOLD) {
+				const user = await this.usersService.findOne(userId);
+				if (user && user.status === 'online') {
+					await this.usersService.updatePresence(userId, 'idle', new Date());
+					this.emitStatusToContacts(userId, 'idle');
+				}
+			}
+		}
+	}
+
+	private async emitStatusToContacts(userId: string, status: string, lastSeen?: Date) {
+		const rooms = await this.roomsService.findAll(userId);
+		
+		for (const room of rooms) {
+			const roomId = room._id.toString();
+			// On émet à la room. Tous ceux qui écoutent cette room recevront le changement.
+			// Pour les rooms privées, friendId == roomId (souvent).
+			this.server.to(roomId).emit('statusChanged', { userId, status, lastSeen: lastSeen || new Date() });
+		}
+	}
+
+	private async sendInitialStatuses(client: Socket) {
+		const userId = this.getUserId(client);
+		const rooms = await this.roomsService.findAll(userId);
+		const allMemberIds = new Set<string>();
+
+		for (const room of rooms) {
+			if (room.members) {
+				room.members.forEach(m => {
+					const mId = (m as any)._id?.toString() || m.toString();
+					if (mId !== userId) allMemberIds.add(mId);
+				});
+			}
+		}
+
+		const statuses: any[] = [];
+		for (const mId of allMemberIds) {
+			const user = await this.usersService.findOne(mId);
+			if (user) {
+				statuses.push({ userId: mId, status: user.status || 'offline', lastSeen: user.lastSeen });
+			}
+		}
+		
+		client.emit('initialStatuses', statuses);
 	}
 
 	@SubscribeMessage('typing')
 	handleTyping(
-	@MessageBody() payload: { room: string; isTyping: boolean },
-	@ConnectedSocket() client: Socket
+		@MessageBody() payload: { room: string; isTyping: boolean },
+		@ConnectedSocket() client: Socket
 	) {
-	const userId = this.getUserId(client);
-	client.broadcast.to(payload.room).emit('userTyping', {
-		sender: userId,
-		...payload
-	});
+		const userId = this.getUserId(client);
+		client.broadcast.to(payload.room).emit('userTyping', { sender: userId, ...payload });
 	}
 
 	@SubscribeMessage('inviteToRoom')
@@ -339,7 +425,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		await this.notificationService.create(
 			payload.recipientId,
 			'invitation',
-			`${senderName} vous a invité à rejoindre "${payload.roomName}" (Code: ${payload.roomCode})`,
+			`${senderName} vous a invité à rejoindre "${payload.roomName}"`,
 			userId,
 			payload.roomCode
 		);
