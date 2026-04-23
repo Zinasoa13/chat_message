@@ -7,6 +7,7 @@ import { Message, MessageSchema } from './schemas/message.schema';
 import { UsersModule } from '../users/users.module';
 import { RoomsModule } from 'src/rooms/rooms.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { AiModule } from 'src/ai/ai.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
     ]),
     UsersModule,
 	forwardRef(() => NotificationsModule),
-	RoomsModule
+	RoomsModule,
+	AiModule
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService],

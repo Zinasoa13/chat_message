@@ -14,18 +14,29 @@ export class NotificationsService {
     private chatGateway: ChatGateway // Pour émettre en temps réel !
   ) {}
 
-  async create(recipientId: string, type: any, content: string, senderId?: string) {
+  async create(recipientId: string, type: any, content: string, senderId?: string, roomCode?: string) {
     const notif = await this.notifModel.create({
       recipient: recipientId,
       sender: senderId,
       type,
-      content
+      content,
+      roomCode
     });
 
-    // Émettre en temps réel via Socket.io
-    this.chatGateway.server.to(recipientId).emit('newNotification', notif);
+    const populatedNotif = await notif.populate('sender', 'name picture');
 
-    return notif;
+    // Émettre en temps réel via Socket.io avec les infos du sender
+    this.chatGateway.server.to(recipientId).emit('newNotification', populatedNotif);
+
+    return populatedNotif;
+  }
+
+  async findAll(userId: string) {
+    return this.notifModel
+      .find({ recipient: userId })
+      .populate('sender', 'name picture')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }
 

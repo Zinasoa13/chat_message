@@ -31,24 +31,18 @@ export class ChatService {
 		return await createdMessage.save();
 	}
 
-	async getMessagesByRoom(roomId: string): Promise<Message[]> {
-	return await this.messageModel
-		.find({ room: new Types.ObjectId(roomId) })
-		.populate('sender', 'name picture')
-		.sort({ createdAt: 1 })
-		.exec();
-	}
+	async getMessagesByRoom(roomId: string, limit: number = 20, before?: Date): Promise<Message[]> {
+		const query: any = { room: new Types.ObjectId(roomId) };
+		// Si on a une date 'before', on cherche les messages créés AVANT cette date
+		if (before) {
+			query.createdAt = { $lt: before };
+		}
 
-	async getPrivateMessages(user1: string, user2: string): Promise<Message[]> {
 		return await this.messageModel
-			.find({
-				$or: [
-					{ sender: new Types.ObjectId(user1), recipient: new Types.ObjectId(user2) },
-					{ sender: new Types.ObjectId(user2), recipient: new Types.ObjectId(user1) }
-				]
-			})
-			.populate('sender', 'name picture')
-			.sort({ createdAt: 1 })
-			.exec();
+		.find(query)
+		.populate('sender', 'name picture')
+		.sort({ createdAt: -1 }) // On trie du plus récent au plus vieux
+		.limit(limit) // On ne prend que 20 messages
+		.exec();
 	}
 }

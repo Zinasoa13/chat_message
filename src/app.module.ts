@@ -9,9 +9,8 @@ import { RoomsModule } from './rooms/rooms.module';
 import { ChatModule } from './chat/chat.module';
 import { FriendsModule } from './friends/friends.module';
 import { NotesModule } from './notes/notes.module';
-import { PublicationModule } from './publication/publication.module';
-import { LikesModule } from './likes/likes.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -31,9 +30,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     ChatModule,
     FriendsModule,
     NotesModule,
-    PublicationModule,
-    LikesModule,
     NotificationsModule,
+	
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

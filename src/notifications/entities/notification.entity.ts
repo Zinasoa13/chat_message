@@ -10,7 +10,10 @@ export class Notification extends Document { // Renommé de NotificationSchema e
   sender: Types.ObjectId;
 
   @Prop({ required: true })
-  type: 'friend_request' | 'new_message' | 'like';
+  type: 'friend_request' | 'new_message' | 'like' | 'invitation' | 'private_message';
+
+  @Prop({ required: false })
+  roomCode: string;
 
   @Prop({ required: true })
   content: string;

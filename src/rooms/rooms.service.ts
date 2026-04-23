@@ -17,6 +17,7 @@ export class RoomsService {
 		roomCode: code,
 		createdBy: userId,
 		members: [userId],
+		isPrivate: false, // Toujours false pour une room créée manuellement
 	});
 
 	return await newRoom.save();

@@ -12,12 +12,20 @@ export class AuthController {
 
 	@Get('google/callback')
 	@UseGuards(AuthGuard('google'))
-	async googleAuthRedirect(@Req() req) {
+	async googleAuthRedirect(@Req() req, @Res() res) {
 	// 1. D'abord on valide/crée l'utilisateur en base avec ton AuthService
 	const user = await this.authService.validateGoogleUser(req.user);
 
 	// 2. Ensuite on génère le token avec l'utilisateur qui sort de la DB
-	return this.authService.login(user);
+	const authData = await this.authService.login(user);
+
+	// 3. Rediriger vers le frontend avec le token et les infos utilisateur
+	const frontendUrl = 'http://localhost:4200/login';
+	const queryParams = `?token=${authData.access_token}&user=${encodeURIComponent(JSON.stringify(authData.user))}`;
+	const redirectUrl = `${frontendUrl}${queryParams}`;
+	
+	console.log("Redirecting to frontend:", redirectUrl);
+	return res.redirect(redirectUrl);
 	}
 
 	@Get('profile')
