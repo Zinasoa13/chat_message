@@ -233,6 +233,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
 		const populatedMessage = await savedMessage.populate('sender', 'name picture');
 
+		const target = this.server.to(payload.room);
+		if (payload.recipientId) target.to(payload.recipientId);
+
 		// --- NOUVEAU : Logique de Notifications ---
 		// On envoie une notif à chaque membre sauf l'expéditeur
 		if (roomDetails && roomDetails.members) {
@@ -241,11 +244,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 			await this.roomsService.update(roomDetails._id.toString(), { lastMessage: savedMessage.content, updatedAt: now } as any);
 
 			// Émettre l'event roomUpdated pour la sidebar
-			this.server.emit('roomUpdated', {
+			target.emit('roomUpdated', {
 				roomId: roomDetails._id.toString(),
 				lastMessage: savedMessage.content,
 				updatedAt: now,
 			});
+
 
 			for (const member of roomDetails.members) {
 				const memberId = (member as any)._id?.toString() || member.toString();
@@ -260,17 +264,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 			}
 		}
 
-
-	const target = this.server.to(payload.room);
-	if (payload.recipientId) target.to(payload.recipientId);
-	target.emit('newMessage', populatedMessage);
+		target.emit('newMessage', populatedMessage);
 	} catch (error) {
+
 		console.error(`Erreur lors de l'envoi du message : ${error.message}`);
 		client.emit('error', { message: 'Impossible d\'envoyer le message.' });
 	}
   }
 
+	@SubscribeMessage('deleteMessage')
+	async handleDeleteMessage(
+		@MessageBody() payload: { messageId: string, room?: string, recipientId?: string },
+		@ConnectedSocket() client: Socket
+	) {
+		const userId = this.getUserId(client);
+		try {
+			await this.chatService.markMessageAsDeleted(payload.messageId, userId);
+			
+			// Retrouver la bonne room pour émettre
+			let targetRoom = payload.room;
+			if (payload.recipientId) {
+				const roomDetails = await this.roomsService.findOrCreatePrivateRoom(userId, payload.recipientId);
+				targetRoom = roomDetails._id.toString();
+			}
+			
+			if (targetRoom) {
+				const target = this.server.to(targetRoom);
+				target.emit('messageDeleted', { messageId: payload.messageId });
+			}
+		} catch (error) {
+			console.error(`Erreur lors de la suppression du message : ${error.message}`);
+			client.emit('error', { message: 'Impossible de supprimer ce message.' });
+		}
+	}
+
+
 	@SubscribeMessage('loadMoreMessages')
+
 	async handleLoadMore(
 	@MessageBody() payload: { room: string, before: Date },
 	@ConnectedSocket() client: Socket
@@ -492,13 +522,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 	}
 
 	@SubscribeMessage('typing')
-	handleTyping(
+	async handleTyping(
 		@MessageBody() payload: { room: string; isTyping: boolean },
 		@ConnectedSocket() client: Socket
 	) {
 		const userId = this.getUserId(client);
-		client.broadcast.to(payload.room).emit('userTyping', { sender: userId, ...payload });
+		const user = await this.usersService.findOne(userId);
+		const senderName = user?.name || 'Quelqu\'un';
+		client.broadcast.to(payload.room).emit('userTyping', { sender: userId, senderName, ...payload });
 	}
+
 
 	@SubscribeMessage('inviteToRoom')
 	async handleInviteToRoom(

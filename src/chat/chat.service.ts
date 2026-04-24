@@ -48,4 +48,21 @@ export class ChatService {
 
 		return messages.reverse(); // On inverse pour avoir l'ordre chronologique (du plus vieux au plus récent)
 	}
+
+	async markMessageAsDeleted(messageId: string, userId: string): Promise<Message | null> {
+		const message = await this.messageModel.findById(messageId);
+		if (!message) {
+			throw new Error('Message introuvable');
+		}
+
+		if (message.sender.toString() !== userId) {
+			throw new Error('Vous n\'êtes pas autorisé à supprimer ce message');
+		}
+
+		// On marque comme supprimé et on peut effacer le contenu pour désencombrer la DB
+		message.isDeleted = true;
+		message.content = undefined;
+		// On pourrait aussi supprimer la fileUrl ici si on supprime le fichier de S3/local
+		return await message.save();
+	}
 }

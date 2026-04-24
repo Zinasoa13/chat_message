@@ -26,6 +26,10 @@ export class Message extends Document {
 
   @Prop({ required: false })
   fileName?: string;
+
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
+
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
