@@ -17,6 +17,10 @@ export class Room extends Document {
 
 	@Prop({ default: false })
 	isPrivate: boolean;
+
+	@Prop({ default: '' })
+	lastMessage: string;
 }
+
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

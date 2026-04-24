@@ -38,5 +38,12 @@ export class NotificationsService {
       .sort({ createdAt: -1 })
       .exec();
   }
+
+  async markAllAsRead(userId: string) {
+    return this.notifModel.updateMany(
+      { recipient: userId, isRead: false },
+      { $set: { isRead: true } }
+    ).exec();
+  }
 }
 

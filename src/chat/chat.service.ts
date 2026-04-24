@@ -20,14 +20,15 @@ export class ChatService {
 	}): Promise<Message> {
 		const createdMessage = new this.messageModel({
 			sender: new Types.ObjectId(payload.sender),
-			room: payload.room ? new Types.ObjectId(payload.room) : undefined,
-			recipient: payload.recipient ? new Types.ObjectId(payload.recipient) : undefined,
+			room: payload.room && Types.ObjectId.isValid(payload.room) ? new Types.ObjectId(payload.room) : undefined,
+			recipient: payload.recipient && Types.ObjectId.isValid(payload.recipient) ? new Types.ObjectId(payload.recipient) : undefined,
 			content: payload.content,
 			type: payload.type || 'text',
 			fileUrl: payload.fileUrl,
 			fileType: payload.fileType,
 			fileName: payload.fileName,
 		});
+
 		return await createdMessage.save();
 	}
 

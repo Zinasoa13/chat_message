@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -10,5 +10,10 @@ export class NotificationsController {
   @Get()
   async findAll(@Req() req) {
     return this.notificationsService.findAll(req.user.userId);
+  }
+
+  @Patch('mark-as-read')
+  async markAllAsRead(@Req() req) {
+    return this.notificationsService.markAllAsRead(req.user.userId);
   }
 }

@@ -3,11 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Friend } from './entities/friend.entity';
 import { NotificationsService } from 'src/notifications/notifications.service';
+import { forwardRef, Inject } from '@nestjs/common';
+import { ChatGateway } from 'src/chat/chat.gateway';
 
 @Injectable()
 export class FriendsService {
 	constructor(@InjectModel(Friend.name) private friendModel: Model<Friend>,
-	private notificationService: NotificationsService
+	private notificationService: NotificationsService,
+	@Inject(forwardRef(() => ChatGateway))
+	private chatGateway: ChatGateway
 	) {}
 
 	async getMyFriends(userId: string) {
@@ -47,6 +51,10 @@ export class FriendsService {
 	if (!result) {
 	throw new NotFoundException('Demande introuvable ou déjà traitée');
 	}
+
+	// Informer le demandeur que son invitation a été acceptée (en temps réel)
+	this.chatGateway.emitToUser(result.requester.toString(), 'friend_accepted', { requester: result.requester, recipient: result.recipient });
+
 	return result;
 	}
 

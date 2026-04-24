@@ -11,8 +11,39 @@ export class AiService {
     this.genAI = new GoogleGenerativeAI(this.configService.get<string>('GEMINI_API_KEY')!);
   }
 
+  async detectReportIntent(text: string): Promise<boolean> {
+    const model = this.genAI.getGenerativeModel({
+      model: 'gemini-3-flash-preview',
+    });
+
+
+    const prompt = `
+    Analyse ce message et réponds uniquement par "YES" ou "NO".
+
+    Question : Est-ce que l'utilisateur demande de rédiger un rapport (peu importe le sujet) ?
+
+    Message : "${text}"
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response.text().trim().toUpperCase();
+
+    return response.includes('YES');
+  }
+
+  async generateText(prompt: string): Promise<string> {
+
+    const model = this.genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+    const result = await model.generateContent(prompt);
+    let text = result.response.text();
+
+    return text.trim();
+  }
+
   async generateReport(topic: string): Promise<string> {
-    const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Utilisation d'un modèle plus récent si possible, ou rester sur flash
+
+    const model = this.genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); // Utilisation d'un modèle plus récent si possible, ou rester sur flash
 
     const prompt = `
       Tu es un assistant de rédaction de rapports professionnels.
@@ -23,8 +54,9 @@ export class AiService {
       2. Divise le rapport en sections logiques (ex: Introduction, Analyse, Recommandations, Conclusion).
       3. Utilise des puces (•) pour les listes.
       4. Ajoute des sauts de ligne doubles entre les paragraphes et les sections pour la lisibilité.
-      5. Pas besoin de symboles Markdown complexes comme des blocs de code, garde un style texte riche mais propre.
-      6. Le ton doit être professionnel et concis.
+      5. Utilise du Markdown propre (titres avec #, listes avec -, paragraphes espacés) pour le rendu HTML.
+      6. Pas besoin de symboles Markdown complexes comme des blocs de code, garde un style texte riche mais propre.
+      7. Le ton doit être professionnel et concis.
 
       Rapport :
     `;

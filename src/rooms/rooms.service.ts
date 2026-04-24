@@ -28,6 +28,7 @@ export class RoomsService {
 		return await this.roomModel
 			.find({ members: userId })
 			.populate('members')
+			.sort({ updatedAt: -1 })
 			.exec();
 	}
 

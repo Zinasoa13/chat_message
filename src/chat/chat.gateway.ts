@@ -6,6 +6,7 @@ import { NotificationsService } from '../notifications/notifications.service'; /
 import { RoomsService } from '../rooms/rooms.service'; // Importe ton service
 import { forwardRef, Inject } from '@nestjs/common';
 import { AiService } from 'src/ai/ai.service';
+import { Types } from 'mongoose';
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
@@ -29,6 +30,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 	afterInit(server: Server) {
 		// Intervalle de vérification des idle (inactifs depuis 5 min)
 		setInterval(() => this.checkIdleUsers(), 30000);
+	}
+
+	public emitToUser(userId: string, event: string, data: any) {
+		const sockets = this.connectedUsers.get(userId);
+		if (sockets) {
+			sockets.forEach(socketId => {
+				this.server.to(socketId).emit(event, data);
+			});
+		}
 	}
 
 	private getUserId(client: Socket): string {
@@ -91,6 +101,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 	}
 
 	try {
+		// --- ANTI-CRASH : Valider l'ID avant de chercher ---
+		if (!Types.ObjectId.isValid(cleanRoomId)) {
+			client.emit('error', { message: 'ID de room invalide.' });
+			return;
+		}
+
 		// Vérifier si la room existe et si l'utilisateur est membre
 		const roomDetails = await this.roomsService.findOne(cleanRoomId);
 		const isMember = roomDetails.members.some(member =>
@@ -132,28 +148,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
 		if (!userId) throw new Error('Utilisateur non identifié');
 
-			// --- 1. LOGIQUE SOACHAN (BOT) ---
-		// On intercepte si c'est explicitement pour le bot ou si le contenu commence par "rédige un rapport"
-		if ((payload.content && payload.content.toLowerCase().startsWith('rédige un rapport')) || payload.toBot) {
+		// console.log('PAYLOAD:', payload); // Debug rapide
+
+		// --- 1. LOGIQUE SOACHAN (BOT) - DOIT ÊTRE TOUT EN HAUT ---
+		const isReportRequest = payload.content && payload.content.length > 10 
+			? await this.aiService.detectReportIntent(payload.content) 
+			: false;
+
+		if (payload.toBot || isReportRequest) {
 			try {
 				let botResponse = '';
 				let type = 'text';
 				let extraData: any = null;
 
-				if (payload.content.toLowerCase().startsWith('rédige un rapport')) {
+				if (isReportRequest) {
+
 					botResponse = await this.aiService.generateReport(payload.content);
 					const report = botResponse.replace(/(\r\n|\r|\n)/g, '\n');
 					botResponse = `J'ai rédigé le rapport :\n\n${report}`;
-					type = 'INTERACTIVE_DRAFT';
+					type = 'INTERACTIVE_REPORT';
 					const rooms = await this.roomsService.findAll(userId);
-					extraData = { reportContent: report, availableRooms: rooms.map(r => ({ id: r._id, name: r.name })) };
+					extraData = { 
+						reportContent: report, 
+						availableRooms: rooms.map(r => ({ 
+							id: r._id.toString(), 
+							name: r.isPrivate ? 'Conversation privée' : r.name,
+							type: r.isPrivate ? 'private' : 'group'
+						})) 
+					};
 				} else {
 					// Utiliser l'IA pour une réponse générale
-					botResponse = await this.aiService.generateReport(payload.content); // On réutilise generateReport pour l'instant
+					botResponse = await this.aiService.generateText(payload.content);
 				}
 
 				this.server.to(client.id).emit('newMessage', {
-					sender: 'SOACHAN_ID',
+					sender: 'bot',
 					content: botResponse,
 					type: type,
 					data: extraData
@@ -169,15 +198,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 		try {
 			let roomDetails;
 
-
 			// SI on a un recipientId, on gère la room privée automatiquement
 			if (payload.recipientId) {
-			roomDetails = await this.roomsService.findOrCreatePrivateRoom(userId, payload.recipientId);
-			payload.room = roomDetails._id.toString(); // On injecte l'ID de la room dans le payload
-			client.join(payload.room); // S'assurer que le client est dans la room
+				roomDetails = await this.roomsService.findOrCreatePrivateRoom(userId, payload.recipientId);
+				payload.room = roomDetails._id.toString(); // On injecte l'ID de la room dans le payload
+				client.join(payload.room); // S'assurer que le client est dans la room
 			} else if (payload.room) {
-			// Logique habituelle pour les rooms de groupe
-			roomDetails = await this.roomsService.findOne(payload.room);
+				// --- ANTI-CRASH ---
+				if (!Types.ObjectId.isValid(payload.room)) {
+					client.emit('error', { message: 'ID de room invalide.' });
+					return;
+				}
+
+				// Logique habituelle pour les rooms de groupe
+				roomDetails = await this.roomsService.findOne(payload.room);
 			const isMember = roomDetails.members.some(member =>
 				(member as any)._id?.toString() === userId || member.toString() === userId
 			);
@@ -202,18 +236,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 		// --- NOUVEAU : Logique de Notifications ---
 		// On envoie une notif à chaque membre sauf l'expéditeur
 		if (roomDetails && roomDetails.members) {
-		for (const member of roomDetails.members) {
-			const memberId = (member as any)._id?.toString() || member.toString();
-			if (memberId !== userId) {
-			await this.notificationService.create(
-				memberId,
-				'new_message',
-				`Nouveau message de ${populatedMessage.sender['name'] || 'quelqu\'un'}`,
-				userId
-			);
+			// Mettre à jour lastMessage + updatedAt de la room
+			const now = new Date();
+			await this.roomsService.update(roomDetails._id.toString(), { lastMessage: savedMessage.content, updatedAt: now } as any);
+
+			// Émettre l'event roomUpdated pour la sidebar
+			this.server.emit('roomUpdated', {
+				roomId: roomDetails._id.toString(),
+				lastMessage: savedMessage.content,
+				updatedAt: now,
+			});
+
+			for (const member of roomDetails.members) {
+				const memberId = (member as any)._id?.toString() || member.toString();
+				if (memberId !== userId) {
+					await this.notificationService.create(
+						memberId,
+						'new_message',
+						`Nouveau message de ${populatedMessage.sender['name'] || 'quelqu\'un'}`,
+						userId
+					);
+				}
 			}
 		}
-	}
+
 
 	const target = this.server.to(payload.room);
 	if (payload.recipientId) target.to(payload.recipientId);
@@ -259,6 +305,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 	if (!userId) throw new Error('Utilisateur non identifié');
 	if (!payload.recipientId) throw new Error('Destinataire manquant');
 
+	console.log(`[PrivateMsg] De ${userId} vers ${payload.recipientId} - Type: ${payload.type}`);
+
 	try {
 		const room = await this.roomsService.findOrCreatePrivateRoom(userId, payload.recipientId);
 		const roomId = room._id.toString();
@@ -276,7 +324,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
 		const populatedMessage = await savedMessage.populate('sender', 'name picture');
 
-		// Diffuser à la room ET au destinataire directement (au cas où il n'a pas rejoint la room)
+		console.log(`[PrivateMsg] Émission vers roomId: ${roomId} et recipientId: ${payload.recipientId}`);
+		
+		// Diffuser à la room ET au destinataire directement
 		this.server.to(roomId).to(payload.recipientId).emit('newMessage', populatedMessage);
 
 		await this.notificationService.create(
@@ -286,7 +336,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 			userId
 		);
 	} catch (error) {
-		console.error(`Erreur lors de l'envoi du message privé : ${error.message}`);
+		console.error(`[PrivateMsg] Erreur : ${error.message}`);
 		client.emit('error', { message: 'Impossible d\'envoyer le message privé.' });
 	}
 	}
@@ -336,6 +386,45 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 		const populatedMessage = await savedMessage.populate('sender', 'name picture');
 		this.server.to(roomId).emit('newMessage', populatedMessage);
 	}
+
+	@SubscribeMessage('sendReportToRoom')
+	async sendReportToRoom(
+		@MessageBody() payload: { roomId: string; content: string },
+		@ConnectedSocket() client: Socket
+	) {
+		const userId = this.getUserId(client);
+
+		if (!payload.roomId || !payload.content) {
+			client.emit('error', { message: 'Données manquantes' });
+			return;
+		}
+
+		try {
+			const room = await this.roomsService.findOne(payload.roomId);
+			const isMember = room.members.some(member =>
+				(member as any)._id?.toString() === userId || member.toString() === userId
+			);
+
+			if (!isMember) {
+				client.emit('error', { message: 'Accès refusé à cette room' });
+				return;
+			}
+
+			const savedMessage = await this.chatService.saveMessage({
+				sender: userId,
+				room: payload.roomId,
+				content: payload.content,
+				type: 'text'
+			});
+
+			const populated = await savedMessage.populate('sender', 'name picture');
+			this.server.to(payload.roomId).emit('newMessage', populated);
+		} catch (error) {
+			console.error(`Erreur envoi rapport : ${error.message}`);
+			client.emit('error', { message: 'Erreur lors de l\'envoi du rapport.' });
+		}
+	}
+
 
 	@SubscribeMessage('updateUserActivity')
 	async handleUpdateUserActivity(@ConnectedSocket() client: Socket) {
