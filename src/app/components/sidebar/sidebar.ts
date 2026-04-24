@@ -30,6 +30,8 @@ export class Sidebar implements OnInit, OnDestroy {
   sentRequests = new Set<string>();
   friendIds = new Set<string>();
   pendingIds = new Set<string>();
+  typingRooms = new Map<string, string>(); // roomId -> typer name
+  unreadRooms = new Set<string>(); // roomIds with unread messages
   
   @Output() openGroup = new EventEmitter<void>();
 
@@ -136,10 +138,31 @@ export class Sidebar implements OnInit, OnDestroy {
 
     // Forcer le rafraîchissement de la sidebar quand une room est mise à jour
     this.subs.add(
-      this.socketHelper.roomUpdated$.subscribe(() => {
+      this.socketHelper.roomUpdated$.subscribe((data: any) => {
+        if (!data) return;
+        // Marquer la room comme unread si elle n'est pas la room active
+        const roomId = data.roomId;
+        if (roomId !== this.activeRoomId) {
+          this.unreadRooms.add(roomId);
+        }
         this.cdr.detectChanges();
       })
     );
+
+    // Écouter les événements de saisie pour la sidebar
+    this.subs.add(
+      this.socketHelper.typing$.subscribe((data: any) => {
+        if (!data) return;
+        const roomId = data.room;
+        if (data.isTyping) {
+          this.typingRooms.set(roomId, data.senderName || 'Quelqu\'un');
+        } else {
+          this.typingRooms.delete(roomId);
+        }
+        this.cdr.detectChanges();
+      })
+    );
+
 
     this.dataService.fetchPendingFriends();
     this.loadHistory();
@@ -205,7 +228,10 @@ export class Sidebar implements OnInit, OnDestroy {
   }
 
   onSearchChange() { this.searchSubject.next(this.searchQuery); }
-  selectRoom(room: any) { this.dataService.setActiveRoom(room); }
+  selectRoom(room: any) {
+    this.unreadRooms.delete(room._id || room.id);
+    this.dataService.setActiveRoom(room);
+  }
   selectFriend(friend: any) { this.dataService.setActiveFriend(friend); }
   
   ngOnDestroy() { 
@@ -224,5 +250,9 @@ export class Sidebar implements OnInit, OnDestroy {
     this.searchResults = []; 
     this.showSearchResults = false;
     this.cdr.markForCheck();
+  }
+
+  trackByRoomId(index: number, room: any): string {
+    return room._id || room.id;
   }
 }

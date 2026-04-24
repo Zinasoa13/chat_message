@@ -5,9 +5,14 @@
     <ng-container [ngSwitch]="currentView">
       <!-- Home View (Default) -->
       <ng-container *ngSwitchCase="'home'">
-        <app-sidebar [class.full-width]="!hasActiveChat" (openGroup)="createGroupOpen = true"></app-sidebar>
-        <app-chat-area *ngIf="hasActiveChat"></app-chat-area>
+        <app-sidebar 
+          *ngIf="!hasActiveChat || !isMobile"
+          [class.full-width]="!hasActiveChat" 
+          (openGroup)="createGroupOpen = true">
+        </app-sidebar>
+        <app-chat-area *ngIf="hasActiveChat" (onBack)="closeChat()"></app-chat-area>
       </ng-container>
+
 
       <!-- Notes View -->
       <ng-container *ngSwitchCase="'notes'">

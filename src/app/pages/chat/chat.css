@@ -14,6 +14,7 @@
   display: flex;
   overflow: hidden;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 app-navbar {
@@ -94,4 +95,58 @@ app-chat-area {
 
 .coming-soon button:hover {
   transform: scale(1.05);
+}
+
+/* --- RESPONSIVE MEDIA QUERIES --- */
+
+/* Tablets and small desktops */
+@media (max-width: 1024px) {
+  .app-container {
+    padding: 20px;
+  }
+  
+  app-sidebar {
+    width: 280px;
+  }
+}
+
+/* Mobile Devices */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0;
+  }
+
+  .premium-card {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .main-layout {
+    flex-direction: column-reverse; /* Navbar goes to bottom */
+  }
+
+  app-navbar {
+    width: 100% !important;
+    height: 70px !important;
+    border-right: none;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    flex-shrink: 0;
+  }
+
+  app-sidebar {
+    width: 100% !important;
+    flex: 1;
+  }
+
+  app-chat-area {
+    width: 100% !important;
+    border-left: none;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: white;
+    /* On utilise absolute pour couvrir la sidebar quand un chat est ouvert */
+  }
+
+  /* Cache ou montre selon l'état si nécessaire via [style.display] dans l'HTML */
 }

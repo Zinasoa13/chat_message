@@ -136,10 +136,34 @@ export class DataService {
   public getRooms(): Observable<any[]> { return this.http.get<any[]>(`${this.baseUrl}/rooms`); }
   public fetchRooms() {
     this.getRooms().subscribe({
-      next: rooms => this.userRoomsSubject.next(rooms),
+      next: fetchedRooms => {
+        const currentRooms = this.userRoomsSubject.value;
+        const merged = fetchedRooms.map((fetched: any) => {
+          const current = currentRooms.find((r: any) => (r._id || r.id) === (fetched._id || fetched.id));
+          // Conserver la version en mémoire si elle est plus récente (évite d'écraser un event socket avec une vieille requête HTTP)
+          if (current && new Date(current.updatedAt || 0) > new Date(fetched.updatedAt || 0)) {
+            return current;
+          }
+          if (current && current.status) {
+            return { ...fetched, status: current.status };
+          }
+          return fetched;
+        });
+
+        // Ajouter les rooms créées localement qui ne sont pas encore dans le retour HTTP
+        currentRooms.forEach((cr: any) => {
+          if (!merged.find((m: any) => (m._id || m.id) === (cr._id || cr.id))) {
+            merged.push(cr);
+          }
+        });
+
+        this.userRoomsSubject.next(merged);
+        this.refreshPresenceInLists();
+      },
       error: () => this.userRoomsSubject.next([])
     });
   }
+
   public createRoom(name: string) { return this.http.post(`${this.baseUrl}/rooms`, { name }); }
   public joinRoom(roomCode: string) { return this.http.post(`${this.baseUrl}/rooms/join/${roomCode}`, {}); }
 

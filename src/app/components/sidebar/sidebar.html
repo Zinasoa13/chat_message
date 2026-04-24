@@ -77,18 +77,28 @@
     </div>
 
     <div class="chat-list custom-scrollbar">
-      <div class="chat-item" *ngFor="let chat of chatsList" [class.active]="(chat._id || chat.id) === activeRoomId" (click)="selectRoom(chat)">
+      <div class="chat-item" *ngFor="let chat of chatsList; trackBy: trackByRoomId" [class.active]="(chat._id || chat.id) === activeRoomId" (click)="selectRoom(chat)">
         <app-avatar [name]="chat.name || 'Room'" [status]="chat.status || 'offline'" [radius]="16" [size]="48"></app-avatar>
+
         <div class="chat-info">
           <div class="chat-top">
             <span class="name">{{chat.name || 'Room '+chat._id}}</span>
             <span class="time">{{chat.updatedAt | date:'shortTime' }}</span>
           </div>
           <div class="chat-bottom">
-            <span class="snippet">{{chat.lastMessage || 'No messages yet...'}}</span>
-            <span class="unread-badge" *ngIf="chat.unread > 0">{{chat.unread}}</span>
-            <svg class="check-icon" *ngIf="!chat.unread || chat.unread === 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <!-- Typing indicator -->
+            <span class="snippet typing" *ngIf="typingRooms.has(chat._id || chat.id)">
+              {{ typingRooms.get(chat._id || chat.id) }} est en train d'écrire...
+            </span>
+            <!-- Last message (unread = bold, read = normal) -->
+            <span class="snippet" *ngIf="!typingRooms.has(chat._id || chat.id)" [class.unread]="unreadRooms.has(chat._id || chat.id)">
+              {{ unreadRooms.has(chat._id || chat.id) ? 'Nouveau message ici' : (chat.lastMessage || 'No messages yet...') }}
+            </span>
+
+            <span class="unread-badge" *ngIf="unreadRooms.has(chat._id || chat.id)">●</span>
+            <svg class="check-icon" *ngIf="!unreadRooms.has(chat._id || chat.id)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
+
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Avatar } from '../../utils/avatar/avatar';
 import { IconBtn } from '../../utils/icon-btn/icon-btn';
@@ -18,6 +18,7 @@ export class ChatHeader {
   @Input() lastSeen?: any;
   @Input() isGroup: boolean = false;
   @Input() activeRoom: any = null;
+  @Output() onBack = new EventEmitter<void>();
 
   showMembersModal = false;
 

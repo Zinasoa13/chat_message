@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatHeader } from '../chat-header/chat-header';
 import { IconBtn } from '../../utils/icon-btn/icon-btn';
@@ -19,6 +19,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./chat-area.css']
 })
 export class ChatArea implements OnInit, OnDestroy {
+  @Output() onBack = new EventEmitter<void>();
   window = window;
   messages: any[] = [];
   newMessage = '';
@@ -126,9 +127,9 @@ export class ChatArea implements OnInit, OnDestroy {
       // En privé, le room ID envoyé par le back peut être le REAL roomId ou le userId de l'autre
       const isTypingActive = (
           data.isTyping && 
-          data.sender !== myId && 
           (data.room === currentRoomId || data.sender === currentRoomId || data.room === this.activeRoom?._id)
       );
+
 
       if (isTypingActive) {
         if (this.activeFriend && data.sender === this.activeFriend._id) {
@@ -157,19 +158,51 @@ export class ChatArea implements OnInit, OnDestroy {
 
       return {
         _id: m._id,
-        content: m.content,
+        content: m.isDeleted ? undefined : m.content,
         type: m.type || 'text',
-        fileUrl: this.getFullUrl(m.fileUrl),
+        fileUrl: m.isDeleted ? undefined : this.getFullUrl(m.fileUrl),
         fileType: m.fileType,
         fileName: m.fileName,
         senderType: isSent ? 'sent' : 'received',
         photo: this.getFullUrl(m.sender?.picture),
         senderName: m.sender?.name,
         time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'read'
+        status: 'read',
+        isDeleted: !!m.isDeleted
       };
     });
   }
+
+  deleteMessage(msg: any) {
+    if (!msg || !msg._id) return;
+    this.socketHelper.deleteMessage({ 
+      messageId: msg._id, 
+      room: this.activeRoomId || this.activeFriend?._id,
+      recipientId: this.activeRoomId ? undefined : this.activeFriend?._id
+    });
+  }
+
+
+  async downloadMedia(url: string, fileName: string) {
+    if (!url) return;
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = fileName || 'download';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(objectUrl);
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('Erreur lors du téléchargement, retour au comportement par défaut', e);
+      window.open(url, '_blank');
+    }
+  }
+
+
 
   getFullUrl(path: string): string {
     if (!path) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';

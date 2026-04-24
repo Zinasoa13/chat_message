@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Auth } from '../../services/auth';
 import { Router } from '@angular/router';
@@ -31,6 +31,7 @@ export class Chat implements OnInit, OnDestroy {
   user: any = null;
   hasActiveChat = false;
   createGroupOpen = false;
+  isMobile = false;
   private subs = new Subscription();
 
   constructor(
@@ -40,11 +41,24 @@ export class Chat implements OnInit, OnDestroy {
     public dataService: DataService
   ) {}
 
+
+  @HostListener('window:resize')
+  onResize() {
+    this.checkMobile();
+  }
+
+  private checkMobile() {
+    this.isMobile = window.innerWidth <= 768;
+  }
+
+
   ngOnInit() {
     if (!this.auth.isLoggedIn()) {
       this.router.navigate(['/login']);
       return;
     }
+
+    this.checkMobile();
 
     this.subs.add(this.dataService.view$.subscribe((view: string) => {
       this.currentView = view;
@@ -83,6 +97,12 @@ export class Chat implements OnInit, OnDestroy {
   onGroupCreated(room: any) {
     this.dataService.fetchRooms();
     this.dataService.setActiveRoom(room);
+  }
+
+  closeChat() {
+    this.dataService.setActiveRoom(null);
+    this.dataService.setActiveFriend(null);
+    this.hasActiveChat = false;
   }
 
   ngOnDestroy() {

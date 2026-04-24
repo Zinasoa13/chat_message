@@ -58,6 +58,19 @@ export class SocketHelper {
       });
     });
 
+    this.socket.on('messageDeleted', (data: { messageId: string }) => {
+      this.zone.run(() => {
+        const current = this.messagesSubject.value;
+        const updated = current.map(msg => {
+          if (msg._id === data.messageId) {
+            return { ...msg, isDeleted: true, content: undefined };
+          }
+          return msg;
+        });
+        this.messagesSubject.next(updated);
+      });
+    });
+
     this.socket.on('userTyping', (data: any) => {
       this.zone.run(() => this.typingSubject.next(data));
     });
@@ -158,5 +171,9 @@ export class SocketHelper {
 
   public emit(event: string, data?: any) {
     this.socket.emit(event, data);
+  }
+
+  public deleteMessage(payload: { messageId: string, room: string, recipientId?: string }) {
+    this.socket.emit('deleteMessage', payload);
   }
 }

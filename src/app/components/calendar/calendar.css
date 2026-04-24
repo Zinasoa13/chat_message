@@ -114,3 +114,40 @@
   box-shadow: none;
   border: none;
 }
+
+/* --- RESPONSIVE MEDIA QUERIES --- */
+
+@media (max-width: 600px) {
+  .calendar-container {
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  .month-info h2 {
+    font-size: 1rem;
+  }
+
+  .month-info {
+    gap: 0.75rem;
+  }
+
+  .day-name {
+    font-size: 0.7rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .day {
+    padding: 0.25rem;
+    min-height: 40px;
+    border-radius: 8px;
+  }
+
+  .day-number {
+    font-size: 0.8rem;
+  }
+
+  .today-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}

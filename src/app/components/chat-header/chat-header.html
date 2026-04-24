@@ -1,6 +1,10 @@
-<!-- chat-header.html -->
 <header class="header flex items-center justify-between p-4 bg-white border-b border-gray-100">
   <div class="flex items-center gap-3">
+    <!-- Bouton Retour (Mobile uniquement) -->
+    <button (click)="onBack.emit()" class="md:hidden p-2 -ml-2 text-gray-500 hover:text-black transition-colors" title="Retour">
+      <span class="material-icons-rounded">arrow_back</span>
+    </button>
+
     <!-- On affiche l'avatar seulement si on a un nom -->
     <app-avatar
       *ngIf="userName"

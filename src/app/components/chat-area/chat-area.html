@@ -6,54 +6,75 @@
     [lastSeen]="headerLastSeen"
     [userPicture]="activeFriend?.picture"
     [isGroup]="activeRoom && !activeRoom.isPrivate"
-    [activeRoom]="activeRoom">
+    [activeRoom]="activeRoom"
+    (onBack)="onBack.emit()">
   </app-chat-header>
 
+
   <div class="messages-container custom-scrollbar" (scroll)="onScroll($event)" #scrollContainer>
-    <div class="message-bubble" *ngFor="let msg of messages" [class]="msg.senderType">
+    <div class="message-bubble" *ngFor="let msg of messages" [class]="msg.senderType" [class.is-deleted]="msg.isDeleted">
 
       <!-- Photo de l'ami à gauche pour les messages reçus -->
       <img *ngIf="msg.senderType === 'received'" [src]="msg.photo" class="w-8 h-8 rounded-full mr-2 mb-1 inline-block object-cover border border-gray-200">
 
       <div class="bubble-content">
-        <!-- Message Texte -->
-        <div *ngIf="msg.type === 'text' && msg.content" class="text-content markdown-content" [innerHTML]="formatMessage(msg.content)">
+        <!-- Message SUPPRIMÉ -->
+        <div *ngIf="msg.isDeleted" class="deleted-msg">
+          <span class="material-icons-rounded block-icon">block</span>
+          <em>Ce message a été supprimé</em>
         </div>
 
-
-        <!-- Message Image -->
-        <div *ngIf="msg.type === 'image' || (msg.type === 'file' && msg.fileType?.startsWith('image/'))" class="image-content">
-          <img [src]="msg.fileUrl" class="chat-image" (click)="window.open(msg.fileUrl, '_blank')">
-        </div>
-
-        <!-- Message Audio (Vocal) -->
-        <div *ngIf="msg.type === 'audio'" class="audio-content">
-          <audio controls [src]="msg.fileUrl" class="modern-audio"></audio>
-        </div>
-
-        <!-- Message Fichier -->
-        <div *ngIf="msg.type === 'file' && !msg.fileType?.startsWith('image/')" class="file-content">
-          <div class="file-info">
-            <span class="material-icons-rounded">insert_drive_file</span>
-            <div class="file-details">
-              <span class="file-name">{{msg.fileName}}</span>
-              <span class="file-size">{{msg.fileType}}</span>
-            </div>
-            <a [href]="msg.fileUrl" target="_blank" [download]="msg.fileName" class="download-btn">
-              <span class="material-icons-rounded">download</span>
-            </a>
+        <ng-container *ngIf="!msg.isDeleted">
+          <!-- Message Texte -->
+          <div *ngIf="msg.type === 'text' && msg.content" class="text-content markdown-content" [innerHTML]="formatMessage(msg.content)">
           </div>
-        </div>
+
+          <!-- Message Image -->
+          <div *ngIf="msg.type === 'image' || (msg.type === 'file' && msg.fileType?.startsWith('image/'))" class="image-content">
+            <img [src]="msg.fileUrl" class="chat-image" (click)="downloadMedia(msg.fileUrl, msg.fileName)">
+            <button class="download-icon-btn over-image" (click)="downloadMedia(msg.fileUrl, msg.fileName)" title="Télécharger">
+              <span class="material-icons-rounded">download</span>
+            </button>
+          </div>
+
+          <!-- Message Audio (Vocal) -->
+          <div *ngIf="msg.type === 'audio'" class="audio-content flex items-center">
+            <audio controls [src]="msg.fileUrl" class="modern-audio"></audio>
+            <button class="download-icon-btn" (click)="downloadMedia(msg.fileUrl, msg.fileName)" title="Télécharger">
+              <span class="material-icons-rounded">download</span>
+            </button>
+          </div>
+
+          <!-- Message Fichier -->
+          <div *ngIf="msg.type === 'file' && !msg.fileType?.startsWith('image/')" class="file-content">
+            <div class="file-info">
+              <span class="material-icons-rounded">insert_drive_file</span>
+              <div class="file-details">
+                <span class="file-name">{{msg.fileName}}</span>
+                <span class="file-size">{{msg.fileType}}</span>
+              </div>
+              <a [href]="msg.fileUrl" target="_blank" [download]="msg.fileName" class="download-btn">
+                <span class="material-icons-rounded">download</span>
+              </a>
+            </div>
+          </div>
+        </ng-container>
       </div>
 
       <div class="message-meta">
         <span class="msg-time">{{msg.time}}</span>
-        <svg class="status-icon" *ngIf="msg.senderType === 'sent'" [class.read]="msg.status === 'read'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="status-icon" *ngIf="msg.senderType === 'sent' && !msg.isDeleted" [class.read]="msg.status === 'read'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"></polyline>
           <polyline points="20 11 11 20 8 17" *ngIf="msg.status === 'read'"></polyline>
         </svg>
+
+        <!-- Bouton Supprimer -->
+        <button *ngIf="msg.senderType === 'sent' && !msg.isDeleted" class="delete-msg-btn" (click)="deleteMessage(msg)" title="Supprimer ce message">
+          <span class="material-icons-rounded">delete_outline</span>
+        </button>
       </div>
     </div>
+
 
     <!-- Ancien indicateur de saisie supprimé -->
   </div>

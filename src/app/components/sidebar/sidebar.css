@@ -345,7 +345,14 @@
 .snippet.typing {
   color: #10b981;
   font-weight: 500;
+  font-style: italic;
 }
+
+.snippet.unread {
+  color: var(--chat-text, #1e293b);
+  font-weight: 700;
+}
+
 
 .unread-badge {
   background: #f59e0b;
