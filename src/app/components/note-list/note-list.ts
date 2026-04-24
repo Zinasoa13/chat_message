@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService } from '../../services/data.service';
 import { FormsModule } from '@angular/forms';
@@ -63,23 +63,31 @@ export class NoteList implements OnInit {
   notes: any[] = [];
   newNote = '';
 
-  constructor(private dataService: DataService) {}
+  constructor(
+    private dataService: DataService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
-    this.dataService.getNotes().subscribe(notes => this.notes = notes);
+    this.dataService.getNotes().subscribe(notes => {
+      this.notes = notes;
+      this.cdr.detectChanges();
+    });
   }
 
   addNote() {
     if (!this.newNote.trim()) return;
     this.dataService.createNote(this.newNote, 'Ma Note').subscribe(note => {
-      this.notes.unshift(note);
+      this.notes = [note, ...this.notes];
       this.newNote = '';
+      this.cdr.detectChanges();
     });
   }
 
   deleteNote(id: string) {
     this.dataService.deleteNote(id).subscribe(() => {
       this.notes = this.notes.filter(n => n._id !== id);
+      this.cdr.detectChanges();
     });
   }
 }

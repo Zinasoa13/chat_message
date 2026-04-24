@@ -26,6 +26,9 @@ export class DataService {
   private userNotificationsSubject = new BehaviorSubject<any[]>([]);
   public userNotifications$ = this.userNotificationsSubject.asObservable();
 
+  private pendingFriendsSubject = new BehaviorSubject<any[]>([]);
+  public pendingFriends$ = this.pendingFriendsSubject.asObservable();
+
   // Cache global pour les statuts de tous les utilisateurs connus
   private userStatusesMap = new Map<string, any>();
 
@@ -46,7 +49,26 @@ export class DataService {
         }
       }
     });
+
+    // Écouter les mises à jour de rooms (lastMessage)
+    this.socketHelper.roomUpdated$.subscribe((data: any) => {
+      if (!data) return;
+      console.log('📡 roomUpdated reçu:', data);
+      const currentRooms = this.userRoomsSubject.value;
+      console.log('📦 Rooms actuelles:', currentRooms.map(r => ({ id: r._id, name: r.name, lastMessage: r.lastMessage })));
+      const updatedRooms = currentRooms.map(room => {
+        const roomId = room._id || room.id;
+        if (roomId === data.roomId) {
+          console.log('✅ Match trouvé pour room:', room.name);
+          return { ...room, lastMessage: data.lastMessage, updatedAt: data.updatedAt };
+        }
+        return room;
+      });
+      this.userRoomsSubject.next(updatedRooms);
+    });
+
   }
+
 
   private refreshPresenceInLists() {
     const myId = this.auth.getUser()?._id;
@@ -138,8 +160,25 @@ export class DataService {
     });
   }
   public getPendingFriends(): Observable<any[]> { return this.http.get<any[]>(`${this.baseUrl}/friends/pending`); }
-  public sendFriendRequest(userId: string) { return this.http.post(`${this.baseUrl}/friends/request/${userId}`, {}); }
-  public acceptFriendRequest(requestId: string) { return this.http.patch(`${this.baseUrl}/friends/accept/${requestId}`, {}); }
+  public fetchPendingFriends() {
+    this.getPendingFriends().subscribe({
+      next: pending => this.pendingFriendsSubject.next(pending),
+      error: () => this.pendingFriendsSubject.next([])
+    });
+  }
+  public sendFriendRequest(userId: string) { 
+    return this.http.post(`${this.baseUrl}/friends/request/${userId}`, {}).pipe(
+      tap(() => this.fetchPendingFriends())
+    ); 
+  }
+  public acceptFriendRequest(requestId: string) { 
+    return this.http.patch(`${this.baseUrl}/friends/accept/${requestId}`, {}).pipe(
+      tap(() => {
+        this.fetchPendingFriends();
+        this.fetchFriends();
+      })
+    ); 
+  }
   public searchUsers(query: string): Observable<any[]> { return this.http.get<any[]>(`${this.baseUrl}/users/search?q=${encodeURIComponent(query)}`); }
 
   // --- NOTIFICATIONS ---
@@ -150,6 +189,9 @@ export class DataService {
       error: () => this.userNotificationsSubject.next([])
     });
   }
+  public markNotificationsAsRead() {
+    return this.http.patch(`${this.baseUrl}/notifications/mark-as-read`, {});
+  }
 
   // --- NOTES ---
   public getNotes(): Observable<any[]> { return this.http.get<any[]>(`${this.baseUrl}/notes`); }
@@ -157,6 +199,12 @@ export class DataService {
   public deleteNote(id: string) { return this.http.delete(`${this.baseUrl}/notes/${id}`); }
 
   // --- USER PROFILE ---
+  public uploadFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/chat/upload`, formData);
+  }
+
   public updateProfilePicture(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);

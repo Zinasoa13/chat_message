@@ -11,11 +11,11 @@ import { Avatar } from '../../utils/avatar/avatar';
   templateUrl: './room-members-modal.html',
   styles: [`
     .modal-overlay {
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(8px);
       display: flex;
@@ -29,9 +29,12 @@ import { Avatar } from '../../utils/avatar/avatar';
       background: white;
       width: 400px;
       max-width: 90%;
+      max-height: 80vh;
       border-radius: 24px;
       overflow: hidden;
       box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
       animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
@@ -70,8 +73,8 @@ import { Avatar } from '../../utils/avatar/avatar';
 
     .members-list {
       padding: 16px;
-      max-height: 400px;
       overflow-y: auto;
+      flex: 1;
     }
 
     .member-item {

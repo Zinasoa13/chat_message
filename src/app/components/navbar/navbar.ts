@@ -49,26 +49,20 @@ export class Navbar implements OnInit, OnDestroy {
       })
     );
 
+    // Listen to pending requests from DataService
+    this.subs.add(
+      this.dataService.pendingFriends$.subscribe(pending => {
+        this.pendingRequests = pending;
+      })
+    );
+
     // Initial fetch
     this.dataService.fetchNotifications();
-    
-    // Load pending friend requests
-    this.loadPendingRequests();
+    this.dataService.fetchPendingFriends();
   }
 
   ngOnDestroy() {
     this.subs.unsubscribe();
-  }
-
-  loadPendingRequests() {
-    this.dataService.getPendingFriends().subscribe({
-      next: (pending: any[]) => {
-        this.pendingRequests = pending;
-      },
-      error: () => {
-        this.pendingRequests = [];
-      }
-    });
   }
 
   joinGroup(roomCode: string) {
@@ -101,8 +95,13 @@ export class Navbar implements OnInit, OnDestroy {
   toggleNotifDropdown() {
     this.showNotifDropdown = !this.showNotifDropdown;
     if (this.showNotifDropdown) {
-      this.unreadNotifs = 0;
-      this.loadPendingRequests();
+      if (this.unreadNotifs > 0) {
+        this.dataService.markNotificationsAsRead().subscribe(() => {
+          this.unreadNotifs = 0;
+          // Optionally update local list to avoid refresh lag
+          this.notifications.forEach(n => n.isRead = true);
+        });
+      }
     }
   }
 

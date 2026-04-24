@@ -8,14 +8,8 @@
     <div class="nav-item" [class.active]="currentView === 'home'" (click)="setView('home')" title="Home">
       <span class="material-icons-rounded">home</span>
     </div>
-    <div class="nav-item" [class.active]="currentView === 'publication'" (click)="setView('publication')" title="Publication">
-      <span class="material-icons-rounded">explore</span>
-    </div>
     <div class="nav-item" [class.active]="currentView === 'notes'" (click)="setView('notes')" title="Notes">
       <span class="material-icons-rounded">note_alt</span>
-    </div>
-    <div class="nav-item" [class.active]="currentView === 'rooms'" (click)="setView('rooms')" title="Room">
-      <span class="material-icons-rounded">groups</span>
     </div>
     <div class="nav-item" [class.active]="currentView === 'calendar'" (click)="setView('calendar')" title="Calendrier">
       <span class="material-icons-rounded">calendar_today</span>
@@ -39,12 +33,15 @@
       <div class="notif-section" *ngIf="pendingRequests.length > 0">
         <span class="notif-section-title">Demandes d'amis</span>
         <div class="notif-item friend-request" *ngFor="let req of pendingRequests">
-          <span class="material-icons-rounded notif-icon">person_add</span>
+          <div class="notif-avatar" *ngIf="req.requester">
+            <img [src]="req.requester.picture ? (req.requester.picture.startsWith('http') ? req.requester.picture : 'http://localhost:3000' + req.requester.picture) : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" alt="">
+          </div>
+          <span class="material-icons-rounded notif-icon" *ngIf="!req.requester">person_add</span>
           <div class="notif-text">
-            <span class="notif-name">{{req.from?.name || req.name || 'Utilisateur'}}</span>
+            <span class="notif-name">{{req.requester?.name || 'Utilisateur'}}</span>
             <span class="notif-desc">souhaite vous ajouter</span>
           </div>
-          <button class="accept-btn" (click)="acceptFriend(req.from?._id || req._id || req.id)">Accepter</button>
+          <button class="accept-btn" (click)="acceptFriend(req._id)">Accepter</button>
         </div>
       </div>
       <!-- Recent Notifications -->

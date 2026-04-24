@@ -18,10 +18,27 @@
 
     <div class="chat-body custom-scrollbar" #scrollContainer>
       <div class="message" *ngFor="let msg of messages" [class.bot-msg]="msg.sender === 'bot'" [class.user-msg]="msg.sender === 'user'">
-        <div class="msg-bubble">
-          {{msg.content}}
+        <!-- Message Bubble (Markdown) -->
+        <div class="msg-bubble" [innerHTML]="formatMessage(msg.content)"></div>
+
+        <!-- Interactive Report Actions (Outside bubble) -->
+        <div *ngIf="msg.type === 'INTERACTIVE_REPORT' && msg.data" class="report-actions fade-in">
+          <p class="action-title">Partager ce rapport dans :</p>
+          <div class="room-list">
+            <button 
+              *ngFor="let room of msg.data?.availableRooms"
+              (click)="sendReport(room.id, msg.data.reportContent)"
+              class="room-btn glass-btn">
+              <span class="room-icon">{{ room.type === 'private' ? '💬' : '👥' }}</span>
+              <span class="room-name">{{ room.name }}</span>
+            </button>
+          </div>
+          <div *ngIf="msg.data?.availableRooms?.length === 0" class="no-rooms">
+            <small>Aucune conversation disponible pour le partage.</small>
+          </div>
         </div>
       </div>
+
 
       <!-- Typing Indicator -->
       <div class="message bot-msg" *ngIf="isBotTyping">

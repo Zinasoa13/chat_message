@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import { Auth } from './auth';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, filter } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SocketHelper {
@@ -17,6 +17,12 @@ export class SocketHelper {
 
   private notificationsSubject = new BehaviorSubject<any[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
+  private friendAcceptedSubject = new BehaviorSubject<any>(null);
+  public friendAccepted$ = this.friendAcceptedSubject.asObservable().pipe(filter(val => val !== null));
+
+  private roomUpdatedSubject = new BehaviorSubject<any>(null);
+  public roomUpdated$ = this.roomUpdatedSubject.asObservable().pipe(filter(val => val !== null));
+
 
   constructor(private socket: Socket, private auth: Auth, private zone: NgZone) {
     this.setupListeners();
@@ -78,7 +84,19 @@ export class SocketHelper {
     this.socket.on('initialStatuses', (statuses: any[]) => {
       this.zone.run(() => this.userStatusesSubject.next(statuses || []));
     });
+
+    this.socket.on('friend_accepted', (data: any) => {
+      this.zone.run(() => {
+        console.log('🎉 Ami accepté:', data);
+        this.friendAcceptedSubject.next(data);
+      });
+    });
+
+    this.socket.on('roomUpdated', (data: any) => {
+      this.zone.run(() => this.roomUpdatedSubject.next(data));
+    });
   }
+
 
   connect() {
     const user = this.auth.getUser();
@@ -101,18 +119,27 @@ export class SocketHelper {
     this.socket.emit('loadMoreMessages', { room, before });
   }
 
-  public sendMessage(content: string, roomId?: string, recipientId?: string) {
+  public sendMessage(content: string, roomId: string, extra?: any) {
     if (this.socket.connected) {
-      this.socket.emit('sendMessage', { content, room: roomId, recipientId });
-      if (roomId) this.sendTyping(roomId, false);
+      const payload = { content, room: roomId, ...extra };
+      this.socket.emit('sendMessage', payload);
+      this.sendTyping(roomId, false);
     }
   }
 
-  public sendPrivateMessage(content: string, recipientId: string, roomId?: string) {
+  public sendToBot(content: string) {
     if (this.socket.connected) {
-      this.socket.emit('sendPrivateMessage', { content, recipientId });
-      if (roomId) this.sendTyping(roomId, false);
-      else if (recipientId) this.sendTyping(recipientId, false); // On utilise recipientId si pas de roomId (le back résout)
+      this.socket.emit('sendMessage', { content, toBot: true });
+      this.sendTyping('bot_channel', false);
+    }
+  }
+
+  public sendPrivateMessage(content: string, recipientId: string, roomId?: string, extra?: any) {
+    if (this.socket.connected) {
+      const payload = { content, recipientId, ...extra };
+      this.socket.emit('sendPrivateMessage', payload);
+      const tid = roomId || recipientId;
+      if (tid) this.sendTyping(tid, false);
     }
   }
 
@@ -127,5 +154,9 @@ export class SocketHelper {
 
   inviteToRoom(recipientId: string, roomCode: string, roomName: string) {
     this.socket.emit('inviteToRoom', { recipientId, roomCode, roomName });
+  }
+
+  public emit(event: string, data?: any) {
+    this.socket.emit(event, data);
   }
 }

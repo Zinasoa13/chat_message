@@ -2,20 +2,36 @@
   <div class="search-section">
     <div class="search-bar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" placeholder="Rechercher un utilisateur..." [(ngModel)]="searchQuery" (input)="onSearchChange()" (blur)="showSearchResults = false" (focus)="searchResults.length > 0 && (showSearchResults = true)">
+      <input type="text" placeholder="Rechercher un utilisateur..." [(ngModel)]="searchQuery" (input)="onSearchChange()" (focus)="searchQuery ? (showSearchResults = searchResults.length > 0) : (showHistory = searchHistory.length > 0)" (blur)="showSearchResults = false; showHistory = false">
       <svg *ngIf="searchQuery" class="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" (mousedown)="clearSearch(); $event.preventDefault()"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </div>
 
     <!-- Search Results Dropdown -->
     <div class="search-results" *ngIf="showSearchResults && searchResults.length > 0">
-      <div class="search-result-item" *ngFor="let user of searchResults">
+      <div class="search-result-item" *ngFor="let user of searchResults" [class.clickable]="getUserStatus(user._id) === 'friend'" (mousedown)="onSearchItemClick(user)">
         <app-avatar [name]="user.name || 'User'" [status]="'offline'" [radius]="12" [size]="36"></app-avatar>
         <div class="result-info">
           <span class="result-name">{{user.name}}</span>
           <span class="result-email">{{user.email}}</span>
         </div>
-        <button class="add-btn" [class.sent]="isRequestSent(user._id)" (mousedown)="addFriend(user._id); $event.preventDefault()" [disabled]="isRequestSent(user._id)">
-          {{isRequestSent(user._id) ? 'Envoyé' : 'Ajouter'}}
+        <div [ngSwitch]="getUserStatus(user._id)">
+          <button *ngSwitchCase="'friend'" class="add-btn friend" disabled>Amis</button>
+          <button *ngSwitchCase="'pending'" class="add-btn sent" disabled>Envoyé</button>
+          <button *ngSwitchDefault class="add-btn" (mousedown)="addFriend(user._id); $event.preventDefault()">Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search History Dropdown -->
+    <div class="search-results history-results" *ngIf="showHistory && !searchQuery && searchHistory.length > 0">
+      <div class="history-header">
+        <span>Recherches récentes</span>
+      </div>
+      <div class="search-result-item history-item" *ngFor="let query of searchHistory" (mousedown)="useHistory(query); $event.preventDefault()">
+        <span class="material-icons-rounded history-icon">history</span>
+        <span class="result-name">{{query}}</span>
+        <button class="remove-history-btn" (mousedown)="removeFromHistory(query, $event)">
+          <span class="material-icons-rounded">close</span>
         </button>
       </div>
     </div>
@@ -79,10 +95,4 @@
   </ng-container>
 </div>
 
-<!-- Modal de création de groupe -->
-<app-create-group-modal 
-  [isOpen]="createGroupOpen" 
-  (close)="createGroupOpen = false"
-  (created)="onGroupCreated($event)">
-</app-create-group-modal>
 

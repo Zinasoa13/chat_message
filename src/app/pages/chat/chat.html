@@ -5,7 +5,7 @@
     <ng-container [ngSwitch]="currentView">
       <!-- Home View (Default) -->
       <ng-container *ngSwitchCase="'home'">
-        <app-sidebar [class.full-width]="!hasActiveChat"></app-sidebar>
+        <app-sidebar [class.full-width]="!hasActiveChat" (openGroup)="createGroupOpen = true"></app-sidebar>
         <app-chat-area *ngIf="hasActiveChat"></app-chat-area>
       </ng-container>
 
@@ -26,8 +26,9 @@
 
       <!-- Other Views (Placeholders) -->
     </ng-container>
+
+    <app-bot-modal [isOpen]="botOpen" (close)="botOpen = false"></app-bot-modal>
+    <app-profile-modal [isOpen]="profileOpen" [user]="user" (close)="profileOpen = false"></app-profile-modal>
+    <app-create-group-modal [isOpen]="createGroupOpen" (close)="createGroupOpen = false" (created)="onGroupCreated($event)"></app-create-group-modal>
   </div>
 </div>
-
-<app-bot-modal [isOpen]="botOpen" (close)="botOpen = false"></app-bot-modal>
-<app-profile-modal [isOpen]="profileOpen" [user]="user" (close)="profileOpen = false"></app-profile-modal>

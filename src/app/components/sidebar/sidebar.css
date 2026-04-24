@@ -81,6 +81,10 @@
   background: #f9fafb;
 }
 
+.search-result-item.clickable {
+  cursor: pointer;
+}
+
 .result-info {
   flex: 1;
   display: flex;
@@ -124,6 +128,59 @@
   background: #e2e8f0;
   color: #94a3b8;
   cursor: default;
+}
+
+.add-btn.friend {
+  background: #dcfce7;
+  color: #16a34a;
+  cursor: default;
+}
+
+/* Search History */
+.history-header {
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--chat-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.history-item {
+  cursor: pointer;
+}
+
+.history-icon {
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.remove-history-btn {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.history-item:hover .remove-history-btn {
+  opacity: 1;
+}
+
+.remove-history-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.remove-history-btn .material-icons-rounded {
+  font-size: 16px;
 }
 
 /* Section Labels */

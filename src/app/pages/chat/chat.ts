@@ -11,13 +11,14 @@ import { NoteList } from '../../components/note-list/note-list';
 import { RoomList } from '../../components/room-list/room-list';
 import { SocketHelper } from '../../services/socket-helper';
 import { Calendar } from '../../components/calendar/calendar';
+import { CreateGroupModal } from '../../components/create-group-modal/create-group-modal';
 import { DataService } from '../../services/data.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, Navbar, Sidebar, ChatArea, BotModal, ProfileModal, NoteList, RoomList, Calendar],
+  imports: [CommonModule, Navbar, Sidebar, ChatArea, BotModal, ProfileModal, CreateGroupModal, NoteList, RoomList, Calendar],
   templateUrl: './chat.html',
   styleUrls: ['./chat.css']
 })
@@ -29,6 +30,7 @@ export class Chat implements OnInit, OnDestroy {
   profileOpen = false;
   user: any = null;
   hasActiveChat = false;
+  createGroupOpen = false;
   private subs = new Subscription();
 
   constructor(
@@ -76,6 +78,11 @@ export class Chat implements OnInit, OnDestroy {
     const room = this.dataService.activeRoomSubject.value;
     const friend = this.dataService.activeFriendSubject.value;
     this.hasActiveChat = !!(room || friend);
+  }
+
+  onGroupCreated(room: any) {
+    this.dataService.fetchRooms();
+    this.dataService.setActiveRoom(room);
   }
 
   ngOnDestroy() {

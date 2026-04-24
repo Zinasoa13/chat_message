@@ -10,38 +10,135 @@
   </app-chat-header>
 
   <div class="messages-container custom-scrollbar" (scroll)="onScroll($event)" #scrollContainer>
-    <div class="message-bubble" *ngFor="let msg of messages" [class]="msg.type">
+    <div class="message-bubble" *ngFor="let msg of messages" [class]="msg.senderType">
 
       <!-- Photo de l'ami à gauche pour les messages reçus -->
-      <img *ngIf="msg.type === 'received'" [src]="msg.photo" class="w-8 h-8 rounded-full mr-2 mb-1 inline-block object-cover border border-gray-200">
+      <img *ngIf="msg.senderType === 'received'" [src]="msg.photo" class="w-8 h-8 rounded-full mr-2 mb-1 inline-block object-cover border border-gray-200">
 
-      <div class="bubble-content" *ngIf="msg.text">
-        {{msg.text}}
+      <div class="bubble-content">
+        <!-- Message Texte -->
+        <div *ngIf="msg.type === 'text' && msg.content" class="text-content markdown-content" [innerHTML]="formatMessage(msg.content)">
+        </div>
+
+
+        <!-- Message Image -->
+        <div *ngIf="msg.type === 'image' || (msg.type === 'file' && msg.fileType?.startsWith('image/'))" class="image-content">
+          <img [src]="msg.fileUrl" class="chat-image" (click)="window.open(msg.fileUrl, '_blank')">
+        </div>
+
+        <!-- Message Audio (Vocal) -->
+        <div *ngIf="msg.type === 'audio'" class="audio-content">
+          <audio controls [src]="msg.fileUrl" class="modern-audio"></audio>
+        </div>
+
+        <!-- Message Fichier -->
+        <div *ngIf="msg.type === 'file' && !msg.fileType?.startsWith('image/')" class="file-content">
+          <div class="file-info">
+            <span class="material-icons-rounded">insert_drive_file</span>
+            <div class="file-details">
+              <span class="file-name">{{msg.fileName}}</span>
+              <span class="file-size">{{msg.fileType}}</span>
+            </div>
+            <a [href]="msg.fileUrl" target="_blank" [download]="msg.fileName" class="download-btn">
+              <span class="material-icons-rounded">download</span>
+            </a>
+          </div>
+        </div>
       </div>
 
       <div class="message-meta">
         <span class="msg-time">{{msg.time}}</span>
-        <svg class="status-icon" *ngIf="msg.type === 'sent'" [class.read]="msg.status === 'read'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="status-icon" *ngIf="msg.senderType === 'sent'" [class.read]="msg.status === 'read'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"></polyline>
           <polyline points="20 11 11 20 8 17" *ngIf="msg.status === 'read'"></polyline>
         </svg>
       </div>
     </div>
 
-    <!-- Indicateur de saisie -->
-    <div class="message-bubble received" *ngIf="isTyping">
-      <div class="bubble-content" style="padding: 12px 16px;">
-        <span class="typing italic text-xs text-gray-400">En train d'écrire...</span>
+    <!-- Ancien indicateur de saisie supprimé -->
+  </div>
+  
+  <!-- Nouvel indicateur de saisie animé -->
+  <div class="typing-indicator-box" [class.show]="typingUser">
+    <div class="typing-content">
+      <span class="typing-name">{{ typingUser }}</span>
+      <span class="typing-text">est en train d'écrire</span>
+      <div class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
     </div>
   </div>
 
   <footer class="chat-footer">
-    <div class="input-container">
+    <div class="input-container" *ngIf="!isRecording">
+      <!-- Attachment Button -->
+      <div class="attach-wrapper">
+        <button class="action-btn" (click)="toggleAttachMenu()">
+          <span class="material-icons-rounded">attach_file</span>
+        </button>
+
+        <!-- Attachment Popup -->
+        <div class="attach-menu" *ngIf="showAttachMenu">
+          <button class="attach-option" (click)="photoInput.click()">
+            <span class="material-icons-rounded">photo_library</span>
+            <span>Photo</span>
+          </button>
+          <button class="attach-option" (click)="fileInput.click()">
+            <span class="material-icons-rounded">insert_drive_file</span>
+            <span>Fichier</span>
+          </button>
+          <button class="attach-option" (click)="openCamera()">
+            <span class="material-icons-rounded">photo_camera</span>
+            <span>Caméra</span>
+          </button>
+        </div>
+      </div>
+
+      <input type="file" #photoInput hidden accept="image/*" (change)="onFileSelected($event)">
+      <input type="file" #fileInput hidden (change)="onFileSelected($event)">
+
+
       <input type="text" placeholder="Écrire un message..." [(ngModel)]="newMessage" (input)="onType()" (keyup.enter)="sendMessage()">
-      <button class="send-btn" (click)="sendMessage()">
+      
+      <button class="action-btn" *ngIf="!newMessage.trim()" (click)="startRecording()">
+        <span class="material-icons-rounded">mic</span>
+      </button>
+
+      <button class="send-btn" *ngIf="newMessage.trim()" (click)="sendMessage()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
       </button>
     </div>
+
+    <!-- Recording State -->
+    <div class="recording-container" *ngIf="isRecording">
+      <div class="recording-info">
+        <div class="record-dot"></div>
+        <span class="recording-timer">{{ formatDuration(recordingDuration) }}</span>
+        <span class="recording-status">Enregistrement...</span>
+      </div>
+      <div class="recording-actions">
+        <button class="cancel-btn" (click)="cancelRecording()">
+          <span class="material-icons-rounded">delete</span>
+        </button>
+        <button class="stop-btn" (click)="stopRecording()">
+          <span class="material-icons-rounded">send</span>
+        </button>
+      </div>
+    </div>
   </footer>
+
+  <!-- Camera Overlay -->
+  <div class="camera-overlay" *ngIf="isCameraOpen">
+    <video #cameraPreview autoplay playsinline class="camera-feed"></video>
+    <div class="camera-controls">
+      <button class="camera-btn cancel" (click)="closeCamera()">
+        <span class="material-icons-rounded">close</span>
+      </button>
+      <button class="camera-btn capture" (click)="capturePhoto()">
+        <span class="material-icons-rounded">camera</span>
+      </button>
+    </div>
+  </div>
 </div>
