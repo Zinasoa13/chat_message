@@ -21,7 +21,9 @@ export class ChatService {
 		const createdMessage = new this.messageModel({
 			sender: new Types.ObjectId(payload.sender),
 			room: payload.room && Types.ObjectId.isValid(payload.room) ? new Types.ObjectId(payload.room) : undefined,
-			recipient: payload.recipient && Types.ObjectId.isValid(payload.recipient) ? new Types.ObjectId(payload.recipient) : undefined,
+			recipient: (payload.recipient || (payload as any).recipientId) && Types.ObjectId.isValid(payload.recipient || (payload as any).recipientId)
+				? new Types.ObjectId(payload.recipient || (payload as any).recipientId)
+				: undefined,
 			content: payload.content,
 			type: payload.type || 'text',
 			fileUrl: payload.fileUrl,

@@ -23,6 +23,22 @@ export class FriendsService {
 
 	// 1. Envoyer une demande
 	async sendRequest(requesterId: string, recipientId: string) {
+	// Vérifier si une demande existe déjà (dans un sens ou dans l'autre)
+	const existing = await this.friendModel.findOne({
+		$or: [
+			{ requester: requesterId, recipient: recipientId },
+			{ requester: recipientId, recipient: requesterId }
+		]
+	});
+
+	if (existing) {
+		if (existing.status === 'accepted') throw new Error('Vous êtes déjà amis');
+		if (existing.requester.toString() === requesterId) throw new Error('Demande déjà envoyée');
+		// Si l'autre a déjà envoyé une demande, on l'accepte automatiquement ?
+		// Pour l'instant on renvoie juste l'existante ou on demande d'accepter l'autre
+		return existing;
+	}
+
 	const newRequest = new this.friendModel({
 		requester: requesterId,
 		recipient: recipientId,

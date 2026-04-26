@@ -59,6 +59,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 		console.log(`Presence: ${userId} est maintenant Online.`);
 		
 		client.join(userId);
+		
+		// Rejoindre toutes les rooms dont l'utilisateur est membre
+		// pour recevoir les événements 'roomUpdated' en temps réel même si la room n'est pas ouverte
+		const rooms = await this.roomsService.findAll(userId);
+		rooms.forEach(room => {
+			client.join(room._id.toString());
+		});
 
 		// Notifier les amis et envoyer le snapshot initial
 		await this.usersService.updatePresence(userId, 'online', new Date());
@@ -228,13 +235,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 			// Sauvegarde du message
 		const savedMessage = await this.chatService.saveMessage({
 		sender: userId,
+		recipient: payload.recipientId,
 		...payload,
 		});
 
 		const populatedMessage = await savedMessage.populate('sender', 'name picture');
 
 		const target = this.server.to(payload.room);
-		if (payload.recipientId) target.to(payload.recipientId);
+		// Note: On n'envoie PAS à .to(payload.recipientId) car ça cause une fuite 
+		// si l'utilisateur est dans une autre room (groupe). L'ID de room suffit.
 
 		// --- NOUVEAU : Logique de Notifications ---
 		// On envoie une notif à chaque membre sauf l'expéditeur
@@ -246,6 +255,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 			// Émettre l'event roomUpdated pour la sidebar
 			target.emit('roomUpdated', {
 				roomId: roomDetails._id.toString(),
+				senderId: userId,
+				isPrivate: roomDetails.isPrivate,
 				lastMessage: savedMessage.content,
 				updatedAt: now,
 			});
@@ -345,6 +356,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 		const savedMessage = await this.chatService.saveMessage({
 			sender: userId,
 			room: roomId,
+			recipient: payload.recipientId, // Utiliser recipient ou recipientId selon comment saveMessage est défini
 			content: payload.content,
 			type: payload.type || 'text',
 			fileUrl: payload.fileUrl,
@@ -354,10 +366,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
 		const populatedMessage = await savedMessage.populate('sender', 'name picture');
 
-		console.log(`[PrivateMsg] Émission vers roomId: ${roomId} et recipientId: ${payload.recipientId}`);
-		
-		// Diffuser à la room ET au destinataire directement
-		this.server.to(roomId).to(payload.recipientId).emit('newMessage', populatedMessage);
+		// Émission du message
+		this.server.to(roomId).emit('newMessage', populatedMessage);
+
+		// Émission de roomUpdated vers la room ET directement à l'ID de l'ami (sécurité)
+		const roomUpdatePayload = {
+			roomId: roomId,
+			senderId: userId,
+			isPrivate: true,
+			lastMessage: populatedMessage.type === 'text' ? populatedMessage.content : `[${populatedMessage.type}]`,
+			updatedAt: (populatedMessage as any).createdAt
+		};
+		this.server.to(roomId).emit('roomUpdated', roomUpdatePayload);
+		this.server.to(payload.recipientId).emit('roomUpdated', roomUpdatePayload);
 
 		await this.notificationService.create(
 			payload.recipientId,
@@ -523,13 +544,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
 	@SubscribeMessage('typing')
 	async handleTyping(
-		@MessageBody() payload: { room: string; isTyping: boolean },
+		@MessageBody() payload: { room: string; isTyping: boolean; isPrivate?: boolean },
 		@ConnectedSocket() client: Socket
 	) {
 		const userId = this.getUserId(client);
 		const user = await this.usersService.findOne(userId);
 		const senderName = user?.name || 'Quelqu\'un';
-		client.broadcast.to(payload.room).emit('userTyping', { sender: userId, senderName, ...payload });
+		
+		// Déterminer isPrivate si non fourni
+		let isPrivate = payload.isPrivate;
+		if (isPrivate === undefined) {
+			try {
+				const room = await this.roomsService.findOne(payload.room);
+				isPrivate = room?.isPrivate;
+			} catch (e) {
+				// Si room non trouvée, c'est probablement un recipientId
+				isPrivate = true;
+			}
+		}
+
+		client.broadcast.to(payload.room).emit('userTyping', { 
+			sender: userId, 
+			senderName, 
+			isPrivate,
+			...payload 
+		});
 	}
 
 
