@@ -12,19 +12,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, #edf4f6 0%, #dce7e9 100%);
+  background: var(--background);
 }
 
 .login-card {
-  background: var(--chat-glass, rgba(255, 255, 255, 0.95));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--surface);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid var(--border);
   border-radius: 40px;
   padding: 3rem;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 50px 100px -20px var(--glow);
   text-align: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -38,12 +38,12 @@
   font-size: 3.5rem;
   font-weight: 900;
   margin-bottom: 0.5rem;
-  color: var(--chat-primary, #000000);
+  color: var(--primary);
   letter-spacing: -2px;
 }
 
 .subtitle {
-  color: var(--chat-text-muted, #6b7280);
+  color: var(--text-secondary);
   margin-bottom: 3rem;
   font-size: 1.1rem;
   line-height: 1.5;
@@ -57,21 +57,21 @@
   gap: 14px;
   width: 100%;
   padding: 1.1rem;
-  background: var(--chat-primary, #000000);
-  color: white;
+  background: var(--primary);
+  color: var(--sent-text);
   border: none;
   border-radius: 20px;
   font-weight: 700;
   font-size: 1.05rem;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 20px -5px var(--glow);
 }
 
 .google-btn:hover {
-  background: #333333;
   transform: scale(1.02);
-  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 30px -10px var(--glow);
+  opacity: 0.9;
 }
 
 .google-btn:active {
@@ -96,7 +96,7 @@
     justify-content: center;
     border: none;
     box-shadow: none;
-    background: white;
+    background: var(--background);
   }
 
   .logo {

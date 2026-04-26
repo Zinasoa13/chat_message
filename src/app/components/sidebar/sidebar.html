@@ -45,7 +45,7 @@
       <span class="count-badge">{{friendsList.length}}</span>
     </div>
 
-    <div class="chat-list custom-scrollbar" *ngIf="friendsList.length > 0" style="max-height: 200px; flex: none;">
+    <div class="chat-list custom-scrollbar friends-list-container" *ngIf="friendsList.length > 0">
       <div class="chat-item friend-item" *ngFor="let friend of friendsList" [class.active]="(friend._id || friend.id) === activeFriendId" (click)="selectFriend(friend)">
         <app-avatar [name]="friend.name || 'Ami'" [src]="friend.picture" [status]="friend.status" [radius]="14" [size]="42"></app-avatar>
         <div class="chat-info">
@@ -56,7 +56,19 @@
             </span>
           </div>
           <div class="chat-bottom">
-            <span class="snippet">{{ friend.status === 'offline' ? 'Vu à ' + (friend.lastSeen | date:'shortTime') : 'Message privé' }}</span>
+            <span class="snippet" [class.typing]="(friend.roomId && typingRooms.has(friend.roomId)) || typingRooms.has('user_' + friend._id)" [class.unread]="(friend.roomId && unreadRooms.has(friend.roomId)) || unreadRooms.has('user_' + friend._id)">
+              <ng-container *ngIf="(friend.roomId && typingRooms.has(friend.roomId)) || typingRooms.has('user_' + friend._id)">
+                {{friend.name}} est en train d'écrire...
+              </ng-container>
+              <ng-container *ngIf="!(friend.roomId && typingRooms.has(friend.roomId)) && !typingRooms.has('user_' + friend._id)">
+                <ng-container *ngIf="(friend.roomId && unreadRooms.has(friend.roomId)) || unreadRooms.has('user_' + friend._id)">
+                  <b>Nouveau message ici</b>
+                </ng-container>
+                <ng-container *ngIf="!((friend.roomId && unreadRooms.has(friend.roomId)) || unreadRooms.has('user_' + friend._id))">
+                  {{ friend.lastMessage || (friend.status === 'offline' ? 'Vu à ' + (friend.lastSeen | date:'shortTime') : 'Message privé') }}
+                </ng-container>
+              </ng-container>
+            </span>
           </div>
         </div>
       </div>

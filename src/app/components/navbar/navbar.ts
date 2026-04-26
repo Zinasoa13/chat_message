@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { SocketHelper } from '../../services/socket-helper';
 import { DataService } from '../../services/data.service';
 import { Subscription } from 'rxjs';
+import { ThemeService } from '../../services/theme.service';
+import { API_URL } from '../../utils/config';
 
 @Component({
   selector: 'app-navbar',
@@ -31,8 +33,13 @@ export class Navbar implements OnInit, OnDestroy {
     private auth: Auth,
     private router: Router,
     private socketHelper: SocketHelper,
-    private dataService: DataService
+    private dataService: DataService,
+    public themeService: ThemeService
   ) {}
+
+  toggleTheme() {
+    this.themeService.cycleTheme();
+  }
 
   ngOnInit() {
     this.subs.add(
@@ -76,20 +83,28 @@ export class Navbar implements OnInit, OnDestroy {
     });
   }
 
-  acceptFriend(userId: string) {
-    this.dataService.acceptFriendRequest(userId).subscribe({
+  acceptFriend(requestId: string) {
+    this.dataService.acceptFriendRequest(requestId).subscribe({
       next: () => {
         this.pendingRequests = this.pendingRequests.filter(
-          r => (r._id || r.id || r.from?._id) !== userId
+          r => (r._id || r.id) !== requestId
         );
-        // Refresh friends list in sidebar
         this.dataService.fetchFriends();
         this.dataService.fetchRooms();
       },
-      error: (err: any) => {
-        console.error('Accept friend failed:', err);
-      }
+      error: (err: any) => console.error('Accept friend failed:', err)
     });
+  }
+
+  acceptFriendFromNotif(notif: any) {
+    // Retrouver la demande d'ami correspondante dans pendingRequests
+    const req = this.pendingRequests.find(p => p.requester?._id === notif.sender?._id);
+    if (req) {
+      this.acceptFriend(req._id);
+    } else {
+      // Si pas trouvé dans le cache local, on refresh tout
+      this.dataService.fetchPendingFriends();
+    }
   }
 
   toggleNotifDropdown() {
@@ -113,7 +128,13 @@ export class Navbar implements OnInit, OnDestroy {
   getPhotoUrl(): string {
     if (!this.user?.picture) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
     if (this.user.picture.startsWith('http')) return this.user.picture;
-    return 'http://localhost:3000' + this.user.picture;
+    return API_URL + this.user.picture;
+  }
+
+  getFullUrl(path: string): string {
+    if (!path) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
+    if (path.startsWith('http')) return path;
+    return API_URL + path;
   }
 
   setView(view: string) {

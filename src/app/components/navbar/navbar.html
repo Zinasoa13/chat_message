@@ -34,7 +34,7 @@
         <span class="notif-section-title">Demandes d'amis</span>
         <div class="notif-item friend-request" *ngFor="let req of pendingRequests">
           <div class="notif-avatar" *ngIf="req.requester">
-            <img [src]="req.requester.picture ? (req.requester.picture.startsWith('http') ? req.requester.picture : 'http://localhost:3000' + req.requester.picture) : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" alt="">
+            <img [src]="getFullUrl(req.requester.picture)" alt="">
           </div>
           <span class="material-icons-rounded notif-icon" *ngIf="!req.requester">person_add</span>
           <div class="notif-text">
@@ -49,7 +49,7 @@
         <span class="notif-section-title">Récent</span>
         <div class="notif-item" *ngFor="let notif of notifications" [class.invitation]="notif.type === 'invitation'" [class.unread]="!notif.isRead">
           <div class="notif-avatar" *ngIf="notif.sender">
-            <img [src]="notif.sender.picture ? (notif.sender.picture.startsWith('http') ? notif.sender.picture : 'http://localhost:3000' + notif.sender.picture) : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" alt="">
+            <img [src]="getFullUrl(notif.sender.picture)" alt="">
           </div>
           <div class="notif-text">
             <div class="notif-title-row">
@@ -58,6 +58,7 @@
             </div>
             <span class="notif-desc">{{notif.content}}</span>
           </div>
+          <button class="accept-btn" *ngIf="notif.type === 'friend_request'" (click)="acceptFriendFromNotif(notif)">Accepter</button>
           <button class="join-btn" *ngIf="notif.type === 'invitation'" (click)="joinGroup(notif.roomCode)">Rejoindre</button>
         </div>
       </div>
@@ -70,6 +71,12 @@
   </div>
 
   <div class="bottom-group">
+    <div class="nav-item theme-toggle" (click)="toggleTheme()" [title]="'Changer de thème (' + themeService.getCurrentTheme() + ')'">
+      <span class="material-icons-rounded" *ngIf="themeService.getCurrentTheme() === 'light'">light_mode</span>
+      <span class="material-icons-rounded" *ngIf="themeService.getCurrentTheme() === 'dark-purple'">dark_mode</span>
+      <span class="material-icons-rounded" *ngIf="themeService.getCurrentTheme() === 'dark-blue'">water_drop</span>
+    </div>
+
     <div class="nav-item logout-btn" (click)="logout()" title="Déconnexion">
       <span class="material-icons-rounded">logout</span>
     </div>

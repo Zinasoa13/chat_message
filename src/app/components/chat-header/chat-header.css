@@ -3,8 +3,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  background: white;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(20px);
 }
 
 .user-block {
@@ -17,6 +18,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   margin: 0;
+  color: var(--text-primary);
 }
 
 .status {

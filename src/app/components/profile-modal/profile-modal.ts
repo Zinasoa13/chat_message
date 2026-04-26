@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DataService } from '../../services/data.service';
 import { Auth } from '../../services/auth';
 import { Subscription } from 'rxjs';
+import { API_URL } from '../../utils/config';
 
 @Component({
   selector: 'app-profile-modal',
@@ -55,7 +56,7 @@ export class ProfileModal implements OnInit, OnDestroy {
   getPhotoUrl(): string {
     if (!this.user?.picture) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
     if (this.user.picture.startsWith('http')) return this.user.picture;
-    return 'http://localhost:3000' + this.user.picture;
+    return API_URL + this.user.picture;
   }
 
   ngOnDestroy() {

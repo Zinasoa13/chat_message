@@ -1,10 +1,18 @@
 .sidebar-wrapper {
   width: 100%;
   height: 100%;
+  background: var(--surface);
+  backdrop-filter: blur(30px);
   display: flex;
   flex-direction: column;
-  background: white;
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.friends-list-container {
+  max-height: 250px;
+  flex: none;
+  border-bottom: 1px solid var(--border);
 }
 
 .search-section {
@@ -13,7 +21,7 @@
 }
 
 .search-bar {
-  background: #f9fafb;
+  background: var(--secondary);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -24,7 +32,7 @@
 .search-bar svg {
   width: 20px;
   height: 20px;
-  color: var(--chat-text-muted);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
@@ -34,7 +42,7 @@
   outline: none;
   width: 100%;
   font-size: 0.95rem;
-  color: var(--chat-text);
+  color: var(--text-primary);
 }
 
 .clear-icon {
@@ -53,9 +61,9 @@
   top: calc(100% - 4px);
   left: 1rem;
   right: 1rem;
-  background: white;
+  background: var(--card);
   border-radius: 14px;
-  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 40px -8px var(--glow);
   z-index: 50;
   max-height: 260px;
   overflow-y: auto;
@@ -78,7 +86,7 @@
 }
 
 .search-result-item:hover {
-  background: #f9fafb;
+  background: var(--surface-hover);
 }
 
 .search-result-item.clickable {
@@ -95,12 +103,12 @@
 .result-name {
   font-weight: 600;
   font-size: 0.9rem;
-  color: var(--chat-text);
+  color: var(--text-primary);
 }
 
 .result-email {
   font-size: 0.75rem;
-  color: var(--chat-text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -113,7 +121,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  background: var(--chat-primary, #000);
+  background: var(--primary);
   color: white;
   transition: all 0.2s;
   white-space: nowrap;
@@ -141,7 +149,7 @@
   padding: 8px 12px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--chat-text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -168,6 +176,10 @@
   margin-left: auto;
   opacity: 0;
   transition: all 0.2s;
+}
+
+.history-item:hover {
+  background: var(--surface-hover);
 }
 
 .history-item:hover .remove-history-btn {
@@ -228,19 +240,19 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--chat-text-muted, #94a3b8);
+  color: var(--text-secondary);
 }
 
 .section-icon {
   font-size: 16px;
-  color: var(--chat-text-muted, #94a3b8);
+  color: var(--text-secondary);
 }
 
 .count-badge {
   font-size: 0.7rem;
   font-weight: 700;
-  background: #f1f5f9;
-  color: var(--chat-text-muted, #94a3b8);
+  background: var(--secondary);
+  color: var(--text-secondary);
   padding: 1px 7px;
   border-radius: 10px;
   margin-left: auto;
@@ -262,12 +274,12 @@
 }
 
 .chat-item:hover {
-  background: #f9fafb;
+  background: var(--surface-hover);
 }
 
 .chat-item.active {
-  background: #f9fafb;
-  border-left-color: var(--chat-primary);
+  background: var(--surface-hover);
+  border-left-color: var(--primary);
 }
 
 .friend-item {
@@ -287,7 +299,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: var(--chat-text-muted);
+  color: var(--text-secondary);
 }
 
 .status-dot {
@@ -297,7 +309,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid var(--card);
 }
 
 .status-dot.online { background: #10b981; }
@@ -324,7 +336,7 @@
 
 .time {
   font-size: 0.75rem;
-  color: var(--chat-text-muted);
+  color: var(--text-secondary);
 }
 
 .chat-bottom {
@@ -335,7 +347,7 @@
 
 .snippet {
   font-size: 0.85rem;
-  color: var(--chat-text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

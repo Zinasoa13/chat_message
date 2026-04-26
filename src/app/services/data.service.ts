@@ -3,10 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { SocketHelper } from './socket-helper';
 import { Auth } from './auth';
+import { API_URL } from '../utils/config';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
-  private readonly baseUrl = 'http://localhost:3000';
+  private readonly baseUrl = API_URL;
 
   private viewSubject = new BehaviorSubject<string>('home');
   public view$ = this.viewSubject.asObservable();
@@ -53,18 +54,25 @@ export class DataService {
     // Écouter les mises à jour de rooms (lastMessage)
     this.socketHelper.roomUpdated$.subscribe((data: any) => {
       if (!data) return;
-      console.log('📡 roomUpdated reçu:', data);
+      
       const currentRooms = this.userRoomsSubject.value;
-      console.log('📦 Rooms actuelles:', currentRooms.map(r => ({ id: r._id, name: r.name, lastMessage: r.lastMessage })));
+      let matchFound = false;
+      
       const updatedRooms = currentRooms.map(room => {
         const roomId = room._id || room.id;
         if (roomId === data.roomId) {
-          console.log('✅ Match trouvé pour room:', room.name);
+          matchFound = true;
           return { ...room, lastMessage: data.lastMessage, updatedAt: data.updatedAt };
         }
         return room;
       });
-      this.userRoomsSubject.next(updatedRooms);
+
+      if (matchFound) {
+        this.userRoomsSubject.next(updatedRooms);
+      } else {
+        // Nouvelle room (p.ex. premier message privé) -> on refresh
+        this.fetchRooms();
+      }
     });
 
   }

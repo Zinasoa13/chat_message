@@ -6,10 +6,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 0;
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--surface);
   backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 10px 0 40px -20px rgba(0, 0, 0, 0.05);
+  border-right: 1px solid var(--border);
+  box-shadow: 10px 0 40px -20px var(--glow);
   z-index: 100;
 }
 
@@ -32,7 +32,7 @@
   transform: translate(-50%, -50%);
   width: 40px;
   height: 40px;
-  background: var(--chat-primary, #000000);
+  background: var(--primary);
   filter: blur(12px);
   opacity: 0.12;
   border-radius: 50%;
@@ -61,7 +61,7 @@
   align-items: center;
   padding-top: 1.5rem;
   margin-top: auto;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border);
   width: 100%;
 }
 
@@ -72,7 +72,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  color: var(--chat-text-muted, #94a3b8);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -84,16 +84,16 @@
 }
 
 .nav-item:hover {
-  background: white;
-  color: var(--chat-primary, #000000);
-  box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.08);
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: 0 8px 15px -3px var(--glow);
   transform: translateY(-2px);
 }
 
 .nav-item.active {
-  background: var(--chat-primary, #000000);
-  color: white;
-  box-shadow: 0 10px 20px -4px rgba(0, 0, 0, 0.2);
+  background: var(--primary);
+  color: var(--sent-text);
+  box-shadow: 0 10px 20px -4px var(--glow);
 }
 
 .nav-item.active:hover {
@@ -149,9 +149,9 @@
   width: 46px;
   height: 46px;
   padding: 2px;
-  background: white;
+  background: var(--card);
   border-radius: 15px;
-  box-shadow: 0 5px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px -3px var(--glow);
   transition: all 0.3s ease;
 }
 
@@ -169,7 +169,7 @@
   width: 12px;
   height: 12px;
   background: #2ecc71;
-  border: 2.5px solid white;
+  border: 2.5px solid var(--card);
   border-radius: 50%;
 }
 
@@ -183,8 +183,8 @@
   left: calc(100% + 15px);
   top: 50%;
   transform: translateY(-50%) translateX(-8px);
-  background: var(--chat-primary, #000000);
-  color: white;
+  background: var(--primary);
+  color: var(--sent-text);
   padding: 0.5rem 0.8rem;
   border-radius: 10px;
   white-space: nowrap;
@@ -194,7 +194,7 @@
   display: flex;
   flex-direction: column;
   pointer-events: none;
-  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 20px -5px var(--glow);
   z-index: 9999;
 }
 
@@ -206,7 +206,7 @@
   transform: translateY(-50%) rotate(45deg);
   width: 10px;
   height: 10px;
-  background: var(--chat-primary, #000000);
+  background: var(--primary);
 }
 
 .user-profile-btn:hover .user-tooltip {
@@ -238,7 +238,7 @@
   height: 16px;
   background: #ff4757;
   border-radius: 8px;
-  border: 1.5px solid white;
+  border: 1.5px solid var(--card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -259,14 +259,15 @@
   transform: translateY(-50%);
   width: 320px;
   max-height: 420px;
-  background: white;
+  background: var(--card);
   border-radius: 16px;
-  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px -10px var(--glow);
   z-index: 200;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: notifSlideIn 0.2s ease;
+  border: 1px solid var(--border);
 }
 
 @keyframes notifSlideIn {
@@ -276,7 +277,7 @@
 
 .notif-dropdown-header {
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--border);
 }
 
 .notif-dropdown-header h4 {
@@ -300,7 +301,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--chat-text-muted, #94a3b8);
+  color: var(--text-secondary);
   padding: 0.4rem 0.75rem;
   display: block;
 }
@@ -316,12 +317,12 @@
 }
 
 .notif-dropdown .notif-item:hover {
-  background: #f9fafb;
+  background: var(--secondary);
 }
 
 .notif-icon {
   font-size: 20px;
-  color: var(--chat-primary, #000);
+  color: var(--primary);
   flex-shrink: 0;
 }
 
@@ -339,7 +340,7 @@
 
 .notif-desc {
   font-size: 0.75rem;
-  color: var(--chat-text-muted, #94a3b8);
+  color: var(--text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -353,7 +354,7 @@
   flex-shrink: 0;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border);
 }
 
 .notif-avatar img {
@@ -379,7 +380,7 @@
 }
 
 .notif-item.unread .notif-name {
-  color: var(--chat-primary, #000);
+  color: var(--primary);
 }
 
 .accept-btn {

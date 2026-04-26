@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Auth } from '../../services/auth';
 import { ActivatedRoute, Router } from '@angular/router';
+import { API_URL } from '../../utils/config';
 
 @Component({
   selector: 'app-login',
@@ -51,6 +52,6 @@ export class Login implements OnInit {
   }
 
   loginWithGoogle() {
-    window.location.href = 'http://localhost:3000/auth/google';
+    window.location.href = API_URL + '/auth/google';
   }
 }

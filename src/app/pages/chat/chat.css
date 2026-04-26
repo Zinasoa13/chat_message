@@ -39,7 +39,7 @@ app-sidebar.full-width {
 app-chat-area {
   flex: 1;
   height: 100%;
-  border-left: 1px solid rgba(0, 0, 0, 0.05);
+  border-left: 1px solid var(--border);
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -54,15 +54,16 @@ app-chat-area {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--surface);
 }
 
 .coming-soon {
   text-align: center;
   padding: 3rem;
-  background: white;
+  background: var(--card);
   border-radius: 30px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+  box-shadow: 0 20px 40px var(--glow);
+  border: 1px solid var(--border);
   max-width: 400px;
 }
 
@@ -78,13 +79,13 @@ app-chat-area {
 }
 
 .coming-soon p {
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
 .coming-soon button {
-  background: var(--chat-primary, #000000);
-  color: white;
+  background: var(--primary);
+  color: var(--sent-text);
   border: none;
   padding: 0.8rem 2rem;
   border-radius: 14px;
@@ -129,7 +130,7 @@ app-chat-area {
     width: 100% !important;
     height: 70px !important;
     border-right: none;
-    border-top: 1px solid rgba(0,0,0,0.05);
+    border-top: 1px solid var(--border);
     flex-shrink: 0;
   }
 
@@ -144,7 +145,7 @@ app-chat-area {
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: white;
+    background: var(--card);
     /* On utilise absolute pour couvrir la sidebar quand un chat est ouvert */
   }
 

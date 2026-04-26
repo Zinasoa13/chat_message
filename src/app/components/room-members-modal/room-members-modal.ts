@@ -26,22 +26,24 @@ import { Avatar } from '../../utils/avatar/avatar';
     }
 
     .modal-card {
-      background: white;
+      background: var(--surface);
       width: 400px;
       max-width: 90%;
       max-height: 80vh;
       border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      box-shadow: 0 20px 40px var(--glow);
       display: flex;
       flex-direction: column;
+      backdrop-filter: blur(25px);
+      border: 1px solid var(--border);
       animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .modal-header {
       padding: 24px;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      color: white;
+      background: var(--primary);
+      color: var(--sent-text);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -56,7 +58,7 @@ import { Avatar } from '../../utils/avatar/avatar';
     .close-btn {
       background: rgba(255, 255, 255, 0.2);
       border: none;
-      color: white;
+      color: var(--sent-text);
       width: 32px;
       height: 32px;
       border-radius: 50%;
@@ -75,6 +77,7 @@ import { Avatar } from '../../utils/avatar/avatar';
       padding: 16px;
       overflow-y: auto;
       flex: 1;
+      background: var(--surface);
     }
 
     .member-item {
@@ -87,7 +90,7 @@ import { Avatar } from '../../utils/avatar/avatar';
     }
 
     .member-item:hover {
-      background: #f8fafc;
+      background: var(--surface-hover);
     }
 
     .member-info {
@@ -98,12 +101,12 @@ import { Avatar } from '../../utils/avatar/avatar';
 
     .member-name {
       font-weight: 600;
-      color: #1e293b;
+      color: var(--text-primary);
     }
 
     .member-status-text {
       font-size: 12px;
-      color: #64748b;
+      color: var(--text-secondary);
     }
 
     .status-online { color: #10b981; }

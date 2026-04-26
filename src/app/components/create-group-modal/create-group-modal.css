@@ -19,10 +19,12 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: var(--surface);
+  backdrop-filter: blur(25px);
   overflow: hidden;
   border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px var(--glow);
 }
 
 .modal-header {
@@ -30,19 +32,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: var(--chat-text, #111827);
+  color: var(--text-primary);
 }
 
 .close-btn {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--secondary);
   border: none;
-  color: var(--chat-text-muted, #6b7280);
+  color: var(--text-secondary);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -71,18 +73,18 @@
 .form-group label {
   display: block;
   margin-bottom: 10px;
-  color: var(--chat-text-muted, #6b7280);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .modern-input {
   width: 100%;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
-  color: var(--chat-text, #111827);
+  color: var(--text-primary);
   font-size: 1rem;
   transition: all 0.3s;
 }
@@ -97,8 +99,8 @@
 .search-bar {
   display: flex;
   align-items: center;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0 12px;
   gap: 10px;
@@ -113,7 +115,7 @@
   background: none;
   border: none;
   padding: 12px 0;
-  color: var(--chat-text, #111827);
+  color: var(--text-primary);
   font-size: 0.9rem;
 }
 
@@ -132,28 +134,29 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px;
-  background: #f8fafc;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .friend-checkbox-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-hover);
 }
 
 .friend-info {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--chat-text, #111827);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .checkbox {
   width: 24px;
   height: 24px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -162,8 +165,8 @@
 }
 
 .checkbox.checked {
-  background: #bb86fc;
-  border-color: #bb86fc;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .checkbox .material-icons-rounded {
@@ -176,13 +179,13 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border);
 }
 
 .cancel-btn {
-  background: none;
-  border: 1px solid #e2e8f0;
-  color: var(--chat-text-muted, #6b7280);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   padding: 10px 20px;
   border-radius: 12px;
   cursor: pointer;
@@ -194,9 +197,9 @@
 }
 
 .create-btn {
-  background: #bb86fc;
+  background: var(--primary);
   border: none;
-  color: #121212;
+  color: var(--sent-text);
   padding: 10px 24px;
   border-radius: 12px;
   font-weight: 600;
@@ -211,9 +214,10 @@
 }
 
 .create-btn:disabled {
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: var(--secondary);
+  color: var(--text-secondary);
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 @keyframes fadeIn {

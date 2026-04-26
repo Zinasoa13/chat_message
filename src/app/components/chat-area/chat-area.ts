@@ -9,6 +9,7 @@ import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { marked } from 'marked';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { API_URL } from '../../utils/config';
 
 @Component({
 
@@ -59,7 +60,26 @@ export class ChatArea implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subs.add(this.socketHelper.messages$.subscribe(msgs => {
-      this.rawMessages = msgs || [];
+      // Filtrer les messages pour ne garder que ceux de la room active
+      const currentRoomId = this.activeRoomId || this.activeFriend?._id;
+      const filtered = (msgs || []).filter(m => {
+        const msgRoomId = m.room?._id || m.room;
+        const msgSenderId = m.sender?._id || m.sender;
+        const msgRecipientId = m.recipient?._id || m.recipient;
+
+        if (this.activeRoomId) {
+          return msgRoomId === this.activeRoomId;
+        } else if (this.activeFriend) {
+          const myId = this.auth.getUser()?._id;
+          // Pour les messages privés, on vérifie soit la room privée, soit le couple sender/recipient
+          return msgRoomId === this.activeRoomId || 
+                 (msgSenderId === this.activeFriend._id && msgRecipientId === myId) || 
+                 (msgSenderId === myId && msgRecipientId === this.activeFriend._id);
+        }
+        return false;
+      });
+
+      this.rawMessages = filtered;
       this.messages = this.mapMessages(this.rawMessages);
       this.cdr.detectChanges();
       if (!this.isLoadingMore) {
@@ -207,7 +227,7 @@ export class ChatArea implements OnInit, OnDestroy {
   getFullUrl(path: string): string {
     if (!path) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
     if (path.startsWith('http')) return path;
-    return `http://localhost:3000${path}`;
+    return `${API_URL}${path}`;
   }
 
   formatMessage(content: string): SafeHtml {

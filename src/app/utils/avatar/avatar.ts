@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { API_URL } from '../config';
 
 @Component({
   selector: 'app-avatar',
@@ -18,13 +19,13 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .avatar-box {
-      background: #e2e8f0;
+      background: var(--secondary);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       position: relative;
-      color: #475569;
+      color: var(--text-secondary);
       overflow: hidden;
       user-select: none;
     }
@@ -36,7 +37,7 @@ import { CommonModule } from '@angular/common';
       width: 25%;
       height: 25%;
       border-radius: 50%;
-      border: 2px solid white;
+      border: 2px solid var(--card);
       z-index: 10;
     }
     .online { background: #10b981; }
@@ -59,7 +60,7 @@ export class Avatar {
     // Si c'est déjà une URL complète (Google par exemple), on ne touche à rien
     if (path.startsWith('http')) return path;
     // Sinon, on ajoute l'adresse de ton serveur NestJS
-    return `http://localhost:3000${path}`;
+    return `${API_URL}${path}`;
   }
 
   // Si l'image ne charge pas (URL cassée), on bascule sur les initiales

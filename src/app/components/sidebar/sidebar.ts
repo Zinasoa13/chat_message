@@ -53,13 +53,29 @@ export class Sidebar implements OnInit, OnDestroy {
     );
     
     this.friends$ = this.dataService.userFriends$.pipe(
-      map(data => {
-        const myId = this.auth.getUser()?._id;
-        return data.map((f: any) => {
-          const friend = f.requester?._id === myId ? f.recipient : f.requester;
-          return { ...friend, status: f.status, lastSeen: f.lastSeen };
-        });
-      })
+      switchMap(friends => this.dataService.userRooms$.pipe(
+        map(rooms => {
+          const myId = this.auth.getUser()?._id;
+          return friends.map((f: any) => {
+            const friend = f.requester?._id === myId ? f.recipient : f.requester;
+            // Trouver la room privée associée
+            const privateRoom = rooms.find(r => 
+              r.isPrivate && 
+              r.members.some((m: any) => (m._id || m) === friend?._id) &&
+              r.members.some((m: any) => (m._id || m) === myId)
+            );
+
+            return { 
+              ...friend, 
+              status: f.status, 
+              lastSeen: f.lastSeen,
+              roomId: privateRoom?._id || privateRoom?.id,
+              lastMessage: privateRoom?.lastMessage,
+              updatedAt: privateRoom?.updatedAt || f.updatedAt || 0
+            };
+          }).sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+        })
+      ))
     );
   }
 
@@ -140,10 +156,27 @@ export class Sidebar implements OnInit, OnDestroy {
     this.subs.add(
       this.socketHelper.roomUpdated$.subscribe((data: any) => {
         if (!data) return;
-        // Marquer la room comme unread si elle n'est pas la room active
         const roomId = data.roomId;
-        if (roomId !== this.activeRoomId) {
+        
+        // Trouver si c'est la room active (groupe ou privé)
+        let isActive = roomId === this.activeRoomId;
+        if (!isActive && this.activeFriendId) {
+          // Si on est en privé, on cherche si le roomId match la room de l'ami actif
+          // On peut le déduire via le cache ou attendre le prochain cycle, 
+          // mais ici on va simplement utiliser un helper si besoin.
+          // Pour faire simple, on va checker dans dataService.userRooms$ synchronement
+          const rooms = (this.dataService as any).userRoomsSubject.value;
+          const activeRoom = rooms.find((r: any) => 
+            r.isPrivate && r.members.some((m: any) => (m._id || m) === this.activeFriendId)
+          );
+          if (activeRoom?._id === roomId) isActive = true;
+        }
+
+        if (!isActive) {
           this.unreadRooms.add(roomId);
+          if (data.isPrivate && data.senderId) {
+            this.unreadRooms.add(`user_${data.senderId}`);
+          }
         }
         this.cdr.detectChanges();
       })
@@ -154,10 +187,18 @@ export class Sidebar implements OnInit, OnDestroy {
       this.socketHelper.typing$.subscribe((data: any) => {
         if (!data) return;
         const roomId = data.room;
+        const senderId = data.sender;
         if (data.isTyping) {
           this.typingRooms.set(roomId, data.senderName || 'Quelqu\'un');
+          // Doubler avec l'ID du sender uniquement pour les chats privés
+          if (data.isPrivate && senderId) {
+            this.typingRooms.set(`user_${senderId}`, data.senderName || 'Quelqu\'un');
+          }
         } else {
           this.typingRooms.delete(roomId);
+          if (senderId) {
+            this.typingRooms.delete(`user_${senderId}`);
+          }
         }
         this.cdr.detectChanges();
       })
@@ -232,7 +273,20 @@ export class Sidebar implements OnInit, OnDestroy {
     this.unreadRooms.delete(room._id || room.id);
     this.dataService.setActiveRoom(room);
   }
-  selectFriend(friend: any) { this.dataService.setActiveFriend(friend); }
+  selectFriend(friend: any) { 
+    // Trouver le roomId associé pour clearer le badge
+    const rooms = (this.dataService as any).userRoomsSubject.value;
+    const privateRoom = rooms.find((r: any) => 
+      r.isPrivate && r.members.some((m: any) => (m._id || m) === friend._id)
+    );
+    if (privateRoom) {
+      this.unreadRooms.delete(privateRoom._id || privateRoom.id);
+    }
+    // AUSSI : Clearer le badge par ID utilisateur
+    this.unreadRooms.delete(`user_${friend._id}`);
+    
+    this.dataService.setActiveFriend(friend); 
+  }
   
   ngOnDestroy() { 
     this.subs.unsubscribe(); 

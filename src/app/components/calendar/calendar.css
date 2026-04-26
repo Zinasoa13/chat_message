@@ -5,9 +5,10 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--surface);
   backdrop-filter: blur(20px);
   border-radius: 20px;
+  border: 1px solid var(--border);
 }
 
 .calendar-header {
@@ -27,26 +28,27 @@
   font-size: 1.2rem;
   font-weight: 800;
   text-transform: capitalize;
-  color: var(--chat-primary);
+  color: var(--primary);
 }
 
 .month-info .material-icons-rounded {
   cursor: pointer;
-  background: white;
+  background: var(--card);
+  color: var(--text-primary);
   padding: 0.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px var(--glow);
   transition: all 0.2s;
 }
 
 .month-info .material-icons-rounded:hover {
   transform: scale(1.1);
-  color: var(--chat-primary);
+  color: var(--primary);
 }
 
 .today-btn {
-  background: var(--chat-primary);
-  color: white;
+  background: var(--primary);
+  color: var(--sent-text);
   border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 12px;
@@ -57,7 +59,7 @@
 
 .today-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px var(--glow);
 }
 
 .calendar-grid {
@@ -70,43 +72,43 @@
 .day-name {
   text-align: center;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-secondary);
   padding-bottom: 1rem;
   font-size: 0.9rem;
 }
 
 .day {
-  background: white;
+  background: var(--card);
   border-radius: 12px;
   padding: 0.5rem;
   min-height: 50px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  border: 1px solid rgba(0,0,0,0.03);
+  box-shadow: 0 2px 8px var(--glow);
+  border: 1px solid var(--border);
   transition: all 0.2s;
 }
 
 .day:hover:not(.empty) {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
-  border-color: var(--chat-primary);
+  box-shadow: 0 10px 25px var(--glow);
+  border-color: var(--primary);
 }
 
 .day.today {
-  background: var(--chat-primary);
-  color: white;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  background: var(--primary);
+  color: var(--sent-text);
+  box-shadow: 0 10px 20px var(--glow);
 }
 
 .day.today .day-number {
-  color: white;
+  color: var(--sent-text);
 }
 
 .day-number {
   font-weight: 800;
   font-size: 0.9rem;
-  color: #334155;
+  color: var(--text-primary);
 }
 
 .empty {

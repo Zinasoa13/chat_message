@@ -1,16 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  --chat-bg: #dce7e9;
-  --chat-glass: rgba(255, 255, 255, 0.95);
-  --chat-primary: #000000;
-  --chat-secondary: #f3f4f6;
-  --chat-accent: #e5e7eb;
-  --chat-text: #111827;
-  --chat-text-muted: #6b7280;
-  --chat-received: #f1f5f9;
-  --chat-sent: #000000;
-  --chat-sent-text: #ffffff;
+  /* --- LIGHT THEME (Default) --- */
+  --bg-main: radial-gradient(circle at center, #edf4f6 0%, #dce7e9 100%);
+  --surface: rgba(255, 255, 255, 0.95);
+  --card: #ffffff;
+  --primary: #000000;
+  --secondary: #f3f4f6;
+  --accent: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border: rgba(0, 0, 0, 0.08);
+  --glow: rgba(0, 0, 0, 0.1);
+  --surface-hover: rgba(0, 0, 0, 0.04);
+  --sent-msg: #6366f1;
+  --sent-text: #ffffff;
+  --received-msg: #ffffff;
+}
+
+[data-theme='dark-purple'] {
+  /* --- DARK PURPLE NEON --- */
+  --bg-main: radial-gradient(circle at center, #151230 0%, #0D0B1F 100%);
+  --surface: rgba(21, 18, 48, 0.8);
+  --card: #1C183D;
+  --primary: #7C5CFF;
+  --secondary: #B084FF;
+  --accent: #9A7CFF;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A9A3C9;
+  --border: #2A2555;
+  --glow: rgba(124, 92, 255, 0.4);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --sent-msg: #7C5CFF;
+  --sent-text: #ffffff;
+  --received-msg: #1C183D;
+}
+
+[data-theme='dark-blue'] {
+  /* --- DARK BLUE OCEAN --- */
+  --bg-main: radial-gradient(circle at center, #111827 0%, #0A0F1C 100%);
+  --surface: rgba(17, 24, 39, 0.8);
+  --card: #1F2937;
+  --primary: #3B82F6;
+  --secondary: #60A5FA;
+  --accent: #22D3EE;
+  --text-primary: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --border: #374151;
+  --glow: rgba(59, 130, 246, 0.3);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --sent-msg: #3B82F6;
+  --sent-text: #ffffff;
+  --received-msg: #1F2937;
 }
 
 * {
@@ -21,21 +62,29 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: radial-gradient(circle at center, #edf4f6 0%, #dce7e9 100%);
+  background: var(--bg-main);
   height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: var(--chat-text);
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.friends-list-container {
+  max-height: 250px;
+  flex: none;
+  border-bottom: 1px solid var(--border);
 }
 
 .premium-card {
-  background: var(--chat-glass);
+  background: var(--surface);
   border-radius: 40px;
-  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 50px 100px -20px var(--glow);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

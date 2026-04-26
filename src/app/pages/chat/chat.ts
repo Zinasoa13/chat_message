@@ -14,6 +14,7 @@ import { Calendar } from '../../components/calendar/calendar';
 import { CreateGroupModal } from '../../components/create-group-modal/create-group-modal';
 import { DataService } from '../../services/data.service';
 import { Subscription } from 'rxjs';
+import { API_URL } from '../../utils/config';
 
 @Component({
   selector: 'app-chat',
@@ -70,7 +71,7 @@ export class Chat implements OnInit, OnDestroy {
 
       const picture = this.user?.picture;
       if (picture) {
-        this.userPhoto = picture.startsWith('http') ? picture : 'http://localhost:3000' + picture;
+        this.userPhoto = picture.startsWith('http') ? picture : API_URL + picture;
       } else {
         this.userPhoto = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
       }

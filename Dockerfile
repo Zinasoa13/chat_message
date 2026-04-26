@@ -12,9 +12,13 @@ RUN npm run build
 # Stage 2: Serve
 FROM nginx:stable-alpine
 
-# Copy the build output to replace the default nginx contents.
-# Adjust the path based on your angular.json output path
-COPY --from=build /app/dist/z_message/browser /usr/share/nginx/html
+# Install envsubst (included in gettext package)
+RUN apk add --no-cache gettext
+
+WORKDIR /usr/share/nginx/html
+
+# Copy the build output
+COPY --from=build /app/dist/z_message/browser .
 
 # Copy a custom nginx configuration to handle Angular routing
 RUN echo 'server { \
@@ -28,4 +32,5 @@ RUN echo 'server { \
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Start script to replace env vars and start nginx
+CMD ["/bin/sh", "-c", "envsubst < assets/env.template.js > assets/env.js && exec nginx -g 'daemon off;'"]

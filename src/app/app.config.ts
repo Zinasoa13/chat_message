@@ -6,8 +6,9 @@ import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
 
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { API_URL } from './utils/config';
 
-const config: SocketIoConfig = { url: 'http://localhost:3000', options: { autoConnect: false } };
+const config: SocketIoConfig = { url: API_URL, options: { autoConnect: false } };
 
 export const appConfig: ApplicationConfig = {
   providers: [
